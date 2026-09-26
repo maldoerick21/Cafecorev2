@@ -1,3 +1,8 @@
+<?php 
+/** @var array $stats */ 
+/** @var array $customers */
+/** @var array $recent */
+?>
 <section>
     <h1>Dashboard overview</h1>
     <div class="stat-grid">

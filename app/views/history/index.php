@@ -1,3 +1,4 @@
+<?php /** @var array $orders */ ?>
 <section>
     <h1>History</h1>
     <?php if (!$orders): ?>

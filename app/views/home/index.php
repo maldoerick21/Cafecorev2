@@ -1,3 +1,8 @@
+<?php 
+/** @var array $featured */
+/** @var array $categories */
+/** @var array $items */ 
+?>
 <section class="hero">
     <div class="hero-copy">
         <p class="eyebrow">Today’s pour</p>

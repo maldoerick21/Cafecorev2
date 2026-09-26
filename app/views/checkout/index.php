@@ -1,3 +1,4 @@
+<?php /** @var array $cart */ ?>
 <section class="checkout-layout">
     <div>
         <h1>Check out</h1>
