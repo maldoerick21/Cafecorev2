@@ -16,12 +16,17 @@
         <a class="brand brand-compact" href="<?= url('admin') ?>">
             <i class="fa-solid fa-mug-hot"></i>
         </a>
-        <nav>
-            <a href="<?= url('admin') ?>" class="<?= ($title ?? '') === 'Dashboard' ? 'is-active' : '' ?>" title="Dashboard"><i class="fa-solid fa-chart-pie"></i></a>
-            <a href="<?= url('admin/menu') ?>" class="<?= in_array($title ?? '', ['Menu management', 'Edit item', 'New item'], true) ? 'is-active' : '' ?>" title="Menu"><i class="fa-solid fa-utensils"></i></a>
-            <a href="<?= url('home') ?>" title="Storefront"><i class="fa-solid fa-store"></i></a>
-        </nav>
-        <a class="sidebar-logout" href="<?= url('logout') ?>" title="Log out"><i class="fa-solid fa-right-from-bracket"></i></a>
+        <button class="admin-nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav-panel" aria-label="Open admin navigation">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="admin-nav-panel" id="admin-nav-panel">
+            <nav>
+                <a href="<?= url('admin') ?>" class="<?= ($title ?? '') === 'Dashboard' ? 'is-active' : '' ?>" title="Dashboard"><i class="fa-solid fa-chart-pie"></i><span>Dashboard</span></a>
+                <a href="<?= url('admin/menu') ?>" class="<?= in_array($title ?? '', ['Menu management', 'Edit item', 'New item'], true) ? 'is-active' : '' ?>" title="Menu"><i class="fa-solid fa-utensils"></i><span>Menu</span></a>
+                <a href="<?= url('home') ?>" title="Storefront"><i class="fa-solid fa-store"></i><span>Storefront</span></a>
+            </nav>
+            <a class="sidebar-logout" href="<?= url('logout') ?>" title="Log out"><i class="fa-solid fa-right-from-bracket"></i><span>Log out</span></a>
+        </div>
     </aside>
     <div class="admin-frame">
         <header class="admin-top">
@@ -38,5 +43,24 @@
             <?= $content ?>
         </main>
     </div>
+    <script>
+        const navToggle = document.querySelector('.admin-nav-toggle');
+        const navPanel = document.getElementById('admin-nav-panel');
+        navToggle?.addEventListener('click', () => {
+            const expanded = navToggle.getAttribute('aria-expanded') === 'true';
+            navToggle.setAttribute('aria-expanded', String(!expanded));
+            navToggle.setAttribute('aria-label', expanded ? 'Open admin navigation' : 'Close admin navigation');
+            navToggle.innerHTML = `<i class="fa-solid fa-${expanded ? 'bars' : 'xmark'}"></i>`;
+            navPanel?.classList.toggle('is-open', !expanded);
+        });
+        navPanel?.querySelectorAll('a').forEach((link) => {
+            link.addEventListener('click', () => {
+                navToggle?.setAttribute('aria-expanded', 'false');
+                navToggle?.setAttribute('aria-label', 'Open admin navigation');
+                navToggle.innerHTML = '<i class="fa-solid fa-bars"></i>';
+                navPanel.classList.remove('is-open');
+            });
+        });
+    </script>
 </body>
 </html>

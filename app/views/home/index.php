@@ -23,11 +23,10 @@
 </section>
 <section class="featured">
     <div class="section-head">
-        <h2>Featured</h2>
         <div class="pills">
             <button class="pill is-active" data-filter="all">All</button>
-            <?php foreach ($categories as $cat): ?>
-                <button class="pill" data-filter="<?= e($cat) ?>"><?= e($cat) ?></button>
+            <?php foreach ($categories as $category): ?>
+                <button class="pill" data-filter="<?= e($category['category_name']) ?>"><?= e($category['category_name']) ?></button>
             <?php endforeach; ?>
         </div>
     </div>

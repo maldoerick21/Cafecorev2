@@ -1,9 +1,15 @@
+<?php /** @var array|null $item */ ?>
+<?php /** @var array $categories */ ?>
 <section class="edit-food">
     <h1>Menu management</h1>
-    <form method="post" action="<?= url('admin/menu/save') ?>" class="edit-grid">
+    <form method="post" action="<?= url('admin/menu/save') ?>" class="edit-grid" enctype="multipart/form-data">
         <?= csrf_field() ?>
         <input type="hidden" name="id" value="<?= (int) ($item['id'] ?? 0) ?>">
         <div class="photo-preview">
+            <button class="photo-upload" type="button" title="Insert image" aria-label="Insert image" onclick="document.getElementById('imageFile').click()">
+                <i class="fa-solid fa-camera"></i>
+            </button>
+            <input type="file" name="image_file" id="imageFile" accept="image/jpeg,image/png,image/gif,image/webp" hidden>
             <?php if (!empty($item['image'])): ?>
                 <img id="preview" src="<?= e($item['image']) ?>" alt="">
             <?php else: ?>
@@ -18,7 +24,11 @@
             </label>
             <label>
                 Category
-                <input type="text" name="category" value="<?= e($item['category'] ?? 'Coffee') ?>" required>
+                <select name="category_id" required>
+                    <?php foreach ($categories as $category): ?>
+                        <option value="<?= (int) $category['category_id'] ?>" <?= (int) ($item['category_id'] ?? ($categories[0]['category_id'] ?? 0)) === (int) $category['category_id'] ? 'selected' : '' ?>><?= e($category['category_name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
             </label>
             <label>
                 Price
@@ -26,7 +36,7 @@
             </label>
             <label>
                 Image URL
-                <input type="url" name="image" id="imageField" value="<?= e($item['image'] ?? '') ?>">
+                <input type="url" name="image" value="<?= e($item['image'] ?? '') ?>">
             </label>
             <label>
                 Description
@@ -41,14 +51,32 @@
     </form>
 </section>
 <script>
-    const field = document.getElementById('imageField');
+    const field = document.getElementById('imageFile');
+    const urlField = document.querySelector('[name="image"]');
     const preview = document.getElementById('preview');
     const empty = document.getElementById('empty');
-    field?.addEventListener('input', () => {
-        if (field.value) {
-            preview.src = field.value;
+    let previewObjectUrl = null;
+    const showPreview = (source) => {
+        if (source) {
+            preview.src = source;
             preview.hidden = false;
             if (empty) empty.hidden = true;
         }
+    };
+    field?.addEventListener('change', () => {
+        if (field.files[0]) {
+            if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+            previewObjectUrl = URL.createObjectURL(field.files[0]);
+            urlField.value = '';
+            showPreview(previewObjectUrl);
+        }
+    });
+    urlField?.addEventListener('input', () => {
+        if (field) field.value = '';
+        if (previewObjectUrl) {
+            URL.revokeObjectURL(previewObjectUrl);
+            previewObjectUrl = null;
+        }
+        showPreview(urlField.value);
     });
 </script>

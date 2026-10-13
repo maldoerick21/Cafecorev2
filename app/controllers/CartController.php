@@ -55,7 +55,7 @@ class CartController extends Controller
             $orderId = Order::create($user['id'], Cart::items(), $catalog);
             Cart::clear();
             flash('success', 'Order #' . $orderId . ' is in the kitchen.');
-            redirect('history');
+            redirect('history?processing=' . $orderId);
         } catch (Throwable $e) {
             flash('error', 'Could not place the order. Try again.');
             redirect('checkout');

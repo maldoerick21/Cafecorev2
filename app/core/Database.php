@@ -18,6 +18,8 @@ class Database
         if ($fresh) {
             self::migrate();
             self::seed();
+        } else {
+            self::migrateCategories();
         }
         return self::$pdo;
     }
@@ -34,16 +36,21 @@ class Database
             address TEXT,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
+        CREATE TABLE categories (
+            category_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category_name TEXT NOT NULL UNIQUE
+        );
         CREATE TABLE menu_items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             description TEXT,
             price REAL NOT NULL,
-            category TEXT NOT NULL,
+            category_id INTEGER NOT NULL,
             image TEXT,
             available INTEGER NOT NULL DEFAULT 1,
             featured INTEGER NOT NULL DEFAULT 0,
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (category_id) REFERENCES categories(category_id)
         );
         CREATE TABLE orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -65,6 +72,47 @@ class Database
         SQL;
         self::$pdo->exec($sql);
     }
+    private static function migrateCategories(): void
+    {
+        self::$pdo->exec('CREATE TABLE IF NOT EXISTS categories (
+            category_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category_name TEXT NOT NULL UNIQUE
+        )');
+        $columns = self::$pdo->query('PRAGMA table_info(menu_items)')->fetchAll(PDO::FETCH_COLUMN, 1);
+        if (in_array('category_id', $columns, true)) {
+            return;
+        }
+
+        self::$pdo->beginTransaction();
+        try {
+            self::$pdo->exec("INSERT OR IGNORE INTO categories (category_name)
+                SELECT DISTINCT category FROM menu_items
+                WHERE category IS NOT NULL AND TRIM(category) <> ''");
+            self::$pdo->exec('CREATE TABLE menu_items_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                description TEXT,
+                price REAL NOT NULL,
+                category_id INTEGER NOT NULL,
+                image TEXT,
+                available INTEGER NOT NULL DEFAULT 1,
+                featured INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (category_id) REFERENCES categories(category_id)
+            )');
+            self::$pdo->exec("INSERT INTO menu_items_new (id, name, description, price, category_id, image, available, featured, created_at)
+                SELECT menu_items.id, menu_items.name, menu_items.description, menu_items.price,
+                    categories.category_id, menu_items.image, menu_items.available, menu_items.featured, menu_items.created_at
+                FROM menu_items
+                JOIN categories ON categories.category_name = menu_items.category");
+            self::$pdo->exec('DROP TABLE menu_items');
+            self::$pdo->exec('ALTER TABLE menu_items_new RENAME TO menu_items');
+            self::$pdo->commit();
+        } catch (Throwable $error) {
+            self::$pdo->rollBack();
+            throw $error;
+        }
+    }
     private static function seed(): void
     {
         $hash = password_hash('password', PASSWORD_DEFAULT);
@@ -83,8 +131,13 @@ class Database
             ['Seasonal Berry Bowl', 'Greek yogurt, local berries, pistachio granola.', 190, 'Brunch', 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=800&q=80', 1, 0],
             ['Earl Grey Steam', 'Bergamot tea, milk foam, lavender honey.', 135, 'Tea', 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=800&q=80', 1, 0],
         ];
-        $item = self::$pdo->prepare('INSERT INTO menu_items (name, description, price, category, image, available, featured) VALUES (?, ?, ?, ?, ?, ?, ?)');
+        $category = self::$pdo->prepare('INSERT OR IGNORE INTO categories (category_name) VALUES (?)');
+        $categoryId = self::$pdo->prepare('SELECT category_id FROM categories WHERE category_name = ?');
+        $item = self::$pdo->prepare('INSERT INTO menu_items (name, description, price, category_id, image, available, featured) VALUES (?, ?, ?, ?, ?, ?, ?)');
         foreach ($items as $row) {
+            $category->execute([$row[3]]);
+            $categoryId->execute([$row[3]]);
+            $row[3] = (int) $categoryId->fetchColumn();
             $item->execute($row);
         }
         $customerId = 1;

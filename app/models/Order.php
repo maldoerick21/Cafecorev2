@@ -34,6 +34,20 @@ class Order
             throw $e;
         }
     }
+    public static function completeAfterProcessing(int $orderId, int $userId): bool
+    {
+        $pdo = Database::connect();
+        $stmt = $pdo->prepare("UPDATE orders SET status = 'completed'
+            WHERE id = ? AND user_id = ? AND status = 'preparing'
+            AND (julianday('now') - julianday(created_at)) * 86400 >= 7");
+        $stmt->execute([$orderId, $userId]);
+        if ($stmt->rowCount() > 0) {
+            return true;
+        }
+        $check = $pdo->prepare("SELECT status = 'completed' FROM orders WHERE id = ? AND user_id = ?");
+        $check->execute([$orderId, $userId]);
+        return (bool) $check->fetchColumn();
+    }
     public static function forUser(int $userId): array
     {
         $orders = Database::connect()

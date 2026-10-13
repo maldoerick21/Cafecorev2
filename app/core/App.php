@@ -25,6 +25,7 @@ class App
             'cart/update' => ['CartController', 'update'],
             'cart/remove' => ['CartController', 'remove'],
             'checkout' => ['CartController', 'place'],
+            'orders/complete' => ['OrderController', 'complete'],
             'profile' => ['ProfileController', 'update'],
             'admin/menu/save' => ['AdminController', 'save'],
             'admin/menu/toggle' => ['AdminController', 'toggle'],
