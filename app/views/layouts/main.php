@@ -13,6 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://kit.fontawesome.com/f43b637ad4.js" crossorigin="anonymous" rel="stylesheet"></script>
     <link rel="stylesheet" href="<?= asset('css/style.css') ?>">
+    <link rel="stylesheet" href="<?= asset('css/main.css') ?>">
 </head>
 <body class="app-body">
     <header class="navbar">
@@ -28,7 +29,15 @@
                 <?php if (($cartCount ?? 0) > 0): ?><span class="badge"><?= (int) $cartCount ?></span><?php endif; ?>
             </a>
         </nav>
-        <a href="<?= url('profile') ?>" class="<?= ($title ?? '') === 'Profile' ? 'is-active' : '' ?>" title="Profile"><i class="fa-solid fa-user"></i></a>
+        <?php $currentUser = auth() ?? []; ?>
+        <a class="account-chip" href="<?= url('profile') ?>" title="Profile">
+            <i class="fa-solid fa-user"></i>
+            <span class="account-details">
+                <span class="account-role"><?= e(ucfirst((string) ($currentUser['role'] ?? 'customer'))) ?></span>
+                <span class="account-separator">|</span>
+                <span class="account-name"><?= e($currentUser['name'] ?? 'Customer') ?></span>
+            </span>
+        </a>
     </header>
     <main class="page">
         <?php if ($msg = flash('error')): ?>

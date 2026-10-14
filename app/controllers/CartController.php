@@ -20,7 +20,7 @@ class CartController extends Controller
             flash('error', 'That item is not available.');
             redirect('home');
         }
-        Cart::add($id, (int) ($_POST['qty'] ?? 1));
+        Cart::add($id, (int) ($_POST['qty'] ?? 1), (string) ($_POST['size'] ?? 'Medium'), (int) ($_POST['sugar'] ?? 100));
         flash('success', $item['name'] . ' added to your tray.');
         redirect($_POST['redirect'] ?? 'home');
     }
@@ -28,14 +28,14 @@ class CartController extends Controller
     {
         require_auth();
         verify_csrf();
-        Cart::set((int) ($_POST['item_id'] ?? 0), (int) ($_POST['qty'] ?? 1));
+        Cart::set((string) ($_POST['cart_key'] ?? ''), (int) ($_POST['qty'] ?? 1));
         redirect('checkout');
     }
     public function remove(): void
     {
         require_auth();
         verify_csrf();
-        Cart::remove((int) ($_POST['item_id'] ?? 0));
+        Cart::remove((string) ($_POST['cart_key'] ?? ''));
         redirect('checkout');
     }
     public function place(): void
@@ -49,7 +49,7 @@ class CartController extends Controller
         }
         $catalog = [];
         foreach ($detail['lines'] as $line) {
-            $catalog[$line['item']['id']] = $line['item'];
+            $catalog[$line['key']] = $line;
         }
         try {
             $orderId = Order::create($user['id'], Cart::items(), $catalog);

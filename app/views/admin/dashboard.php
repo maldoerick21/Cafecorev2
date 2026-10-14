@@ -3,7 +3,7 @@
 /** @var array $customers */
 /** @var array $recent */
 ?>
-<section>
+<section class="dashboard-overview">
     <h1>Dashboard overview</h1>
     <div class="stat-grid">
         <article class="stat">

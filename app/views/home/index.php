@@ -32,7 +32,7 @@
     </div>
     <div class="item-grid">
         <?php foreach ($items as $item): ?>
-            <article class="item-card" data-category="<?= e($item['category']) ?>">
+            <article class="item-card" data-category="<?= e($item['category']) ?>" role="link" tabindex="0" data-href="<?= e(url('menu/item?id=' . (int) $item['id'])) ?>">
                 <div class="item-photo">
                     <img src="<?= e($item['image']) ?>" alt="<?= e($item['name']) ?>">
                     <?php if ($item['featured']): ?><span class="chip">Featured</span><?php endif; ?>
@@ -45,7 +45,7 @@
                         <form method="post" action="<?= url('cart/add') ?>">
                             <?= csrf_field() ?>
                             <input type="hidden" name="item_id" value="<?= (int) $item['id'] ?>">
-                            <button class="icon-btn" type="submit" title="Add to tray"><i class="fa-solid fa-plus"></i></button>
+                            <a class="icon-btn" href="<?= url('menu/item?id=' . (int) $item['id']) ?>" title="Customize item"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
                         </form>
                     </div>
                 </div>

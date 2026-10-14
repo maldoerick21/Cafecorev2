@@ -41,6 +41,35 @@ class User
     {
         return (int) Database::connect()->query('SELECT COUNT(*) FROM users WHERE role = "customer"')->fetchColumn();
     }
+
+    public static function createPasswordReset(int $userId, string $otpHash, string $expiresAt): void
+    {
+        $db = Database::connect();
+        $db->prepare('DELETE FROM password_reset_tokens WHERE user_id = ?')->execute([$userId]);
+        $stmt = $db->prepare('INSERT INTO password_reset_tokens (user_id, otp_hash, expires_at, attempts) VALUES (?, ?, ?, 0)');
+        $stmt->execute([$userId, $otpHash, $expiresAt]);
+    }
+
+    public static function getPasswordReset(int $userId): ?array
+    {
+        $stmt = Database::connect()->prepare('SELECT * FROM password_reset_tokens WHERE user_id = ? ORDER BY id DESC LIMIT 1');
+        $stmt->execute([$userId]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    public static function incrementPasswordResetAttempts(int $id): void
+    {
+        Database::connect()->prepare('UPDATE password_reset_tokens SET attempts = attempts + 1 WHERE id = ?')->execute([$id]);
+    }
+
+    public static function updatePassword(int $userId, string $password): void
+    {
+        $stmt = Database::connect()->prepare('UPDATE users SET password = ? WHERE id = ?');
+        $stmt->execute([password_hash($password, PASSWORD_DEFAULT), $userId]);
+        Database::connect()->prepare('DELETE FROM password_reset_tokens WHERE user_id = ?')->execute([$userId]);
+    }
+
     public static function toSession(array $user): array
     {
         return [

@@ -9,6 +9,7 @@ class App
             'forgot' => ['AuthController', 'forgot'],
             'logout' => ['AuthController', 'logout'],
             'home' => ['HomeController', 'index'],
+            'menu/item' => ['HomeController', 'detail'],
             'checkout' => ['CartController', 'index'],
             'history' => ['OrderController', 'history'],
             'profile' => ['ProfileController', 'index'],

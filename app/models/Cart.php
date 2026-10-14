@@ -9,52 +9,43 @@ class Cart
     {
         return array_sum(self::items());
     }
-    public static function add(int $id, int $qty = 1): void
+    public static function makeKey(int $id, string $size = 'Medium', int $sugar = 100): string
     {
-        if (!isset($_SESSION['cart'])) {
-            $_SESSION['cart'] = [];
-        }
-        $_SESSION['cart'][$id] = ($_SESSION['cart'][$id] ?? 0) + max(1, $qty);
+        $size = in_array($size, ['Small', 'Medium', 'Large'], true) ? $size : 'Medium';
+        $sugar = in_array($sugar, [0, 25, 50, 75, 100], true) ? $sugar : 100;
+        return $id . '|' . $size . '|' . $sugar;
     }
-    public static function set(int $id, int $qty): void
+    public static function add(int $id, int $qty = 1, string $size = 'Medium', int $sugar = 100): void
     {
-        if ($qty < 1) {
-            unset($_SESSION['cart'][$id]);
-            return;
-        }
-        $_SESSION['cart'][$id] = $qty;
+        if (!isset($_SESSION['cart'])) $_SESSION['cart'] = [];
+        $key = self::makeKey($id, $size, $sugar);
+        $_SESSION['cart'][$key] = ($_SESSION['cart'][$key] ?? 0) + max(1, min(99, $qty));
     }
-    public static function remove(int $id): void
+    public static function set(string $key, int $qty): void
     {
-        unset($_SESSION['cart'][$id]);
+        if ($qty < 1) unset($_SESSION['cart'][$key]);
+        else if (isset($_SESSION['cart'][$key])) $_SESSION['cart'][$key] = min(99, $qty);
     }
-    public static function clear(): void
-    {
-        $_SESSION['cart'] = [];
-    }
+    public static function remove(string $key): void { unset($_SESSION['cart'][$key]); }
+    public static function clear(): void { $_SESSION['cart'] = []; }
     public static function detailed(): array
     {
-        $lines = [];
-        $subtotal = 0;
-        foreach (self::items() as $id => $qty) {
-            $item = MenuItem::find((int) $id);
-            if (!$item) {
-                continue;
-            }
-            $line = $item['price'] * $qty;
-            $subtotal += $line;
-            $lines[] = [
-                'item' => $item,
-                'qty' => $qty,
-                'line' => $line,
-            ];
+        $lines = []; $subtotal = 0;
+        foreach (self::items() as $key => $qty) {
+            $parts = explode('|', (string) $key);
+            $id = (int) ($parts[0] ?? $key);
+            $size = $parts[1] ?? 'Medium';
+            $sugar = isset($parts[2]) ? (int) $parts[2] : 100;
+            if (!in_array($size, ['Small', 'Medium', 'Large'], true)) $size = 'Medium';
+            if (!in_array($sugar, [0,25,50,75,100], true)) $sugar = 100;
+            $item = MenuItem::find($id);
+            if (!$item) continue;
+            $extra = ['Small' => 0, 'Medium' => 15, 'Large' => 25][$size];
+            $price = (float) $item['price'] + $extra;
+            $line = $price * $qty; $subtotal += $line;
+            $lines[] = ['key' => (string)$key, 'item' => $item, 'qty' => $qty, 'size' => $size, 'sugar' => $sugar, 'price' => $price, 'line' => $line];
         }
         $service = $subtotal > 0 ? 15 : 0;
-        return [
-            'lines' => $lines,
-            'subtotal' => $subtotal,
-            'service' => $service,
-            'total' => $subtotal + $service,
-        ];
+        return ['lines' => $lines, 'subtotal' => $subtotal, 'service' => $service, 'total' => $subtotal + $service];
     }
 }

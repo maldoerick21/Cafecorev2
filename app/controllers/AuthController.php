@@ -68,13 +68,106 @@ class AuthController extends Controller
     }
     public function forgot(): void
     {
-        $this->view('auth/forgot', ['title' => 'Forgot password'], 'auth');
+        $this->view('auth/forgot', [
+            'title' => 'Forgot password',
+            'resetEmail' => $_SESSION['password_reset_email'] ?? '',
+            'otpSent' => !empty($_SESSION['password_reset_user_id']),
+        ], 'auth');
     }
+
     public function forgotPost(): void
     {
         verify_csrf();
-        $email = trim($_POST['email'] ?? '');
-        flash('success', 'If an account exists for ' . $email . ', a reset link is on its way.');
+        $action = $_POST['action'] ?? 'send_otp';
+
+        if ($action === 'send_otp') {
+            $email = trim($_POST['email'] ?? '');
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                flash('error', 'Please enter a valid email address.');
+                redirect('forgot');
+            }
+
+            $user = User::findByEmail($email);
+            if (!$user) {
+                flash('error', 'No account was found with that email address.');
+                redirect('forgot');
+            }
+
+            // Limit OTP requests to one per 60 seconds for this browser session.
+            $lastSent = (int) ($_SESSION['password_reset_last_sent'] ?? 0);
+            if (time() - $lastSent < 60) {
+                flash('error', 'Please wait a minute before requesting another OTP.');
+                redirect('forgot');
+            }
+
+            $otp = (string) random_int(100000, 999999);
+            $expiresAt = date('Y-m-d H:i:s', time() + 600);
+            User::createPasswordReset((int) $user['id'], password_hash($otp, PASSWORD_DEFAULT), $expiresAt);
+            try {
+                Mailer::sendPasswordOtp($user['email'], $otp);
+            } catch (Throwable $error) {
+                // Remove the unusable OTP if delivery failed.
+                $reset = User::getPasswordReset((int) $user['id']);
+                if ($reset) {
+                    Database::connect()->prepare('DELETE FROM password_reset_tokens WHERE id = ?')->execute([$reset['id']]);
+                }
+                error_log('CaféCore password reset email failed: ' . $error->getMessage());
+                flash('error', 'We could not send the email. Check the SMTP settings and try again.');
+                redirect('forgot');
+            }
+
+            $_SESSION['password_reset_user_id'] = (int) $user['id'];
+            $_SESSION['password_reset_email'] = $user['email'];
+            $_SESSION['password_reset_last_sent'] = time();
+            flash('success', 'An OTP has been sent to your email. It expires in 10 minutes.');
+            redirect('forgot');
+        }
+
+        if ($action === 'reset_password') {
+            $email = trim($_POST['email'] ?? '');
+            $otp = trim($_POST['otp'] ?? '');
+            $password = $_POST['password'] ?? '';
+            $confirm = $_POST['password_confirm'] ?? '';
+            $userId = (int) ($_SESSION['password_reset_user_id'] ?? 0);
+            $sessionEmail = (string) ($_SESSION['password_reset_email'] ?? '');
+            $user = $userId > 0 ? User::find($userId) : null;
+            $reset = $user ? User::getPasswordReset($userId) : null;
+
+            if (!$user || $email === '' || strcasecmp($email, $sessionEmail) !== 0 || strcasecmp($user['email'], $sessionEmail) !== 0) {
+                flash('error', 'Please request a new OTP using your account email.');
+                unset($_SESSION['password_reset_user_id'], $_SESSION['password_reset_email']);
+                redirect('forgot');
+            }
+            if (!preg_match('/^\d{6}$/', $otp)) {
+                flash('error', 'Enter the 6-digit OTP from your email.');
+                redirect('forgot');
+            }
+            if (strlen($password) < 8) {
+                flash('error', 'Your new password must be at least 8 characters.');
+                redirect('forgot');
+            }
+            if ($password !== $confirm) {
+                flash('error', 'The passwords do not match.');
+                redirect('forgot');
+            }
+            if (!$reset || strtotime($reset['expires_at']) < time() || (int) $reset['attempts'] >= 5) {
+                flash('error', 'Your OTP has expired or reached its attempt limit. Request a new one.');
+                unset($_SESSION['password_reset_user_id'], $_SESSION['password_reset_email']);
+                redirect('forgot');
+            }
+            if (!password_verify($otp, $reset['otp_hash'])) {
+                User::incrementPasswordResetAttempts((int) $reset['id']);
+                flash('error', 'That OTP is incorrect. Please try again.');
+                redirect('forgot');
+            }
+
+            User::updatePassword($userId, $password);
+            unset($_SESSION['password_reset_user_id'], $_SESSION['password_reset_email'], $_SESSION['password_reset_last_sent']);
+            flash('success', 'Your password has been reset. You can now log in with your new password.');
+            redirect('login');
+        }
+
+        flash('error', 'Invalid password reset request.');
         redirect('forgot');
     }
     public function logout(): void

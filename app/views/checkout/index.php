@@ -15,11 +15,11 @@
                         <img src="<?= e($line['item']['image']) ?>" alt="">
                         <div class="grow">
                             <strong><?= e($line['item']['name']) ?></strong>
-                            <span><?= money((float) $line['item']['price']) ?></span>
+                            <span><?= e($line['size']) ?> · <?= (int) $line['sugar'] ?>% sugar · <?= money((float) $line['price']) ?></span>
                         </div>
                         <form method="post" action="<?= url('cart/update') ?>" class="qty-form">
                             <?= csrf_field() ?>
-                            <input type="hidden" name="item_id" value="<?= (int) $line['item']['id'] ?>">
+                            <input type="hidden" name="cart_key" value="<?= e($line['key']) ?>">
                             <button name="qty" value="<?= $line['qty'] - 1 ?>" type="submit">−</button>
                             <span><?= (int) $line['qty'] ?></span>
                             <button name="qty" value="<?= $line['qty'] + 1 ?>" type="submit">+</button>
@@ -27,7 +27,7 @@
                         <strong class="line-total"><?= money((float) $line['line']) ?></strong>
                         <form method="post" action="<?= url('cart/remove') ?>">
                             <?= csrf_field() ?>
-                            <input type="hidden" name="item_id" value="<?= (int) $line['item']['id'] ?>">
+                            <input type="hidden" name="cart_key" value="<?= e($line['key']) ?>">
                             <button class="ghost" type="submit"><i class="fa-solid fa-trash"></i></button>
                         </form>
                     </li>

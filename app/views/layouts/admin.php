@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://kit.fontawesome.com/f43b637ad4.js" crossorigin="anonymous" rel="stylesheet"></script>
     <link rel="stylesheet" href="<?= asset('css/style.css') ?>">
+    <link rel="stylesheet" href="<?= asset('css/admin.css') ?>">
 </head>
 <body class="admin-body">
     <aside class="admin-sidebar">
@@ -31,7 +32,12 @@
     <div class="admin-frame">
         <header class="admin-top">
             <strong><?= APP_NAME ?></strong>
-            <span><?= e(auth()['name'] ?? 'Admin') ?></span>
+            <?php $currentUser = auth() ?? []; ?>
+            <div class="admin-account" aria-label="Signed in account">
+                <span class="admin-account-role"><?= e(ucfirst((string) ($currentUser['role'] ?? 'admin'))) ?></span>
+                <span class="admin-account-separator">|</span>
+                <span class="admin-account-name"><?= e($currentUser['name'] ?? 'Admin') ?></span>
+            </div>
         </header>
         <main class="admin-page">
             <?php if ($msg = flash('error')): ?>

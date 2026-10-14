@@ -6,33 +6,27 @@ class Order
         $pdo = Database::connect();
         $pdo->beginTransaction();
         try {
-            $total = 0;
-            $lines = [];
-            foreach ($cart as $itemId => $qty) {
-                $item = $catalog[$itemId] ?? null;
-                if (!$item || $qty < 1) {
-                    continue;
-                }
-                $lineTotal = $item['price'] * $qty;
-                $total += $lineTotal;
-                $lines[] = [$item, $qty];
+            $total = 0; $lines = [];
+            foreach ($cart as $key => $qty) {
+                $line = $catalog[$key] ?? null;
+                if (!$line || $qty < 1) continue;
+                $item = $line['item'];
+                $price = (float) $line['price'];
+                $total += $price * $qty;
+                $displayName = $item['name'] . ' (' . $line['size'] . ', ' . $line['sugar'] . '% sugar)';
+                $lines[] = [$item, $qty, $price, $displayName];
             }
-            if (!$lines) {
-                throw new RuntimeException('Cart is empty.');
-            }
+            if (!$lines) throw new RuntimeException('Cart is empty.');
+            $total += 15;
             $stmt = $pdo->prepare('INSERT INTO orders (user_id, total, status) VALUES (?, ?, ?)');
             $stmt->execute([$userId, $total, 'preparing']);
             $orderId = (int) $pdo->lastInsertId();
             $lineStmt = $pdo->prepare('INSERT INTO order_items (order_id, menu_item_id, name, qty, price) VALUES (?, ?, ?, ?, ?)');
-            foreach ($lines as [$item, $qty]) {
-                $lineStmt->execute([$orderId, $item['id'], $item['name'], $qty, $item['price']]);
+            foreach ($lines as [$item, $qty, $price, $displayName]) {
+                $lineStmt->execute([$orderId, $item['id'], $displayName, $qty, $price]);
             }
-            $pdo->commit();
-            return $orderId;
-        } catch (Throwable $e) {
-            $pdo->rollBack();
-            throw $e;
-        }
+            $pdo->commit(); return $orderId;
+        } catch (Throwable $e) { $pdo->rollBack(); throw $e; }
     }
     public static function completeAfterProcessing(int $orderId, int $userId): bool
     {
