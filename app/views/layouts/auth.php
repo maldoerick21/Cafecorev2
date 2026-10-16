@@ -31,5 +31,6 @@
             <?= $content ?>
         </main>
     </div>
+    <script src="<?= asset('js/flash.js') ?>"></script>
 </body>
 </html>

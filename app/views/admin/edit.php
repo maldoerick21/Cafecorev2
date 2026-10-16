@@ -35,10 +35,6 @@
                 <input type="number" step="0.01" min="1" name="price" value="<?= e($item['price'] ?? '') ?>" required>
             </label>
             <label>
-                Image URL
-                <input type="url" name="image" value="<?= e($item['image'] ?? '') ?>">
-            </label>
-            <label>
                 Description
                 <textarea name="description" rows="5"><?= e($item['description'] ?? '') ?></textarea>
             </label>
@@ -52,7 +48,6 @@
 </section>
 <script>
     const field = document.getElementById('imageFile');
-    const urlField = document.querySelector('[name="image"]');
     const preview = document.getElementById('preview');
     const empty = document.getElementById('empty');
     let previewObjectUrl = null;
@@ -67,16 +62,7 @@
         if (field.files[0]) {
             if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
             previewObjectUrl = URL.createObjectURL(field.files[0]);
-            urlField.value = '';
             showPreview(previewObjectUrl);
         }
-    });
-    urlField?.addEventListener('input', () => {
-        if (field) field.value = '';
-        if (previewObjectUrl) {
-            URL.revokeObjectURL(previewObjectUrl);
-            previewObjectUrl = null;
-        }
-        showPreview(urlField.value);
     });
 </script>

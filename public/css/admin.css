@@ -1,5 +1,5 @@
 /* Admin layout and dashboard */
-.admin-body { display: grid; grid-template-columns: 76px minmax(0, 1fr); min-height: 100vh; background: #f0ebe3; }
+.admin-body { display: grid; grid-template-columns: 76px minmax(0, 1fr); height: 100vh; height: 100dvh; overflow: hidden; background: #f0ebe3; }
 .admin-sidebar { background: var(--navy); color: #fff; display: flex; flex-direction: column; align-items: center; padding: 1rem 0; }
 .admin-nav-toggle { display: none; }
 .admin-nav-panel { display: flex; flex: 1; width: 100%; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; }
@@ -8,13 +8,13 @@
 .admin-sidebar nav span, .sidebar-logout span { display: none; }
 .admin-sidebar a.is-active, .admin-sidebar a:hover { background: rgba(255,255,255,.12); opacity: 1; }
 .sidebar-logout { margin-top: auto; color: #f0b4b4; }
-.admin-frame { min-width: 0; }
-.admin-top { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 1.8rem; background: #fff; }
+.admin-frame { min-width: 0; min-height: 0; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+.admin-top { flex: 0 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 1.8rem; background: #fff; }
 .admin-account { display: inline-flex; align-items: center; gap: .5rem; max-width: min(360px, 60%); padding: .55rem .9rem; border: 1px solid #e9e2d8; border-radius: 999px; background: #faf8f4; color: var(--ink); font-size: .85rem; }
 .admin-account-role { color: var(--gold-deep); font-weight: 700; text-transform: capitalize; }
 .admin-account-separator { color: #a59b8e; }
 .admin-account-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.admin-page { padding: 2rem; display: grid; gap: 2rem; }
+.admin-page { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; padding: 2rem; display: grid; align-content: start; gap: 2rem; }
 .dashboard-overview { display: grid; gap: 2rem; }
 .dashboard-overview > h1 { margin: 0 0 .5rem; }
 .stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.5rem; }
@@ -36,7 +36,7 @@
 .dot.mute { background: #c9c1b4; }
 .table { width: 100%; border-collapse: collapse; }
 .table th, .table td { text-align: left; padding: .9rem .6rem; border-bottom: 1px solid var(--line); font-size: .9rem; }
-.menu-admin-list { display: grid; gap: .7rem; }
+.menu-admin-list { display: grid; gap: .7rem; width: 100%; }
 .switch { position: relative; width: 44px; height: 24px; display: inline-block; }
 .switch input { display: none; }
 .switch span { position: absolute; inset: 0; background: #c9c1b4; border-radius: 99px; cursor: pointer; }
@@ -57,7 +57,7 @@
 .check { display: flex; gap: .45rem; align-items: center; font-size: .9rem; }
 
 @media (max-width: 900px) {
-    .admin-body { grid-template-columns: 1fr; align-content: start; }
+    .admin-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); align-content: stretch; }
     .admin-sidebar { position: relative; z-index: 20; flex-direction: row; justify-content: space-between; padding: .65rem 1rem; min-height: 64px; }
     .admin-sidebar > .brand { width: 44px; height: 44px; justify-content: center; }
     .admin-nav-toggle { display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 10px; background: rgba(255,255,255,.12); color: #fff; font-size: 1.1rem; cursor: pointer; }
@@ -67,7 +67,7 @@
     .admin-sidebar nav a, .admin-sidebar .sidebar-logout { display: flex; align-items: center; justify-content: flex-start; gap: .75rem; width: 100%; height: 44px; padding: 0 .75rem; border-radius: 8px; }
     .admin-sidebar nav span, .admin-sidebar .sidebar-logout span { display: inline; }
     .admin-sidebar .sidebar-logout { margin-top: .4rem; }
-    .admin-frame { min-width: 0; }
+    .admin-frame { min-width: 0; min-height: 0; height: 100%; }
     .admin-page { padding: 1.25rem; gap: 1.5rem; }
     .dashboard-overview { gap: 1.5rem; }
     .stat-grid, .dash-grid, .edit-food .edit-grid { grid-template-columns: 1fr; }
@@ -82,4 +82,180 @@
 @media (max-width: 560px) {
     .admin-top { padding: .85rem 1rem; }
     .admin-account { padding: .45rem .65rem; font-size: .75rem; gap: .35rem; max-width: 65%; }
+}
+
+/* Dashboard analytics */
+.panel-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+.panel-subtitle { margin: -.8rem 0 1rem; color: #82796f; font-size: .85rem; }
+.earnings-chart { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: .65rem; align-items: end; min-height: 260px; padding: 1rem .1rem .2rem; }
+.earnings-column { display: flex; min-width: 0; height: 240px; flex-direction: column; align-items: center; justify-content: flex-end; gap: .55rem; }
+.earnings-value { max-width: 100%; min-height: 1em; color: #746b60; font-size: .64rem; white-space: nowrap; writing-mode: vertical-rl; transform: rotate(180deg); }
+.earnings-bar-track { display: flex; width: min(100%, 30px); height: 160px; align-items: flex-end; justify-content: center; overflow: hidden; border-radius: 8px 8px 3px 3px; background: #f4efe7; }
+.earnings-bar-track i { display: block; width: 100%; min-height: 3px; border-radius: 7px 7px 2px 2px; background: var(--gold); transition: height .25s ease; }
+.earnings-month { color: #746b60; font-size: .68rem; white-space: nowrap; }
+.pie-panel .pie { width: 170px; height: 170px; }
+.pie-empty { background: #e8e1d7; }
+.pie-panel .legend { gap: .85rem; }
+.pie-panel .legend li { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; align-items: center; gap: .45rem; }
+.pie-panel .legend .dot { margin: 0; }
+.pie-panel .legend strong { font-size: .76rem; font-weight: 600; white-space: nowrap; }
+.table-wrap { width: 100%; overflow-x: auto; }
+@media (max-width: 1100px) { .earnings-chart { gap: .35rem; } .earnings-value { font-size: .56rem; } .earnings-month { font-size: .62rem; } }
+@media (max-width: 640px) { .earnings-chart { gap: .2rem; min-height: 220px; } .earnings-column { height: 210px; gap: .4rem; } .earnings-bar-track { height: 130px; width: 65%; } .earnings-value { font-size: .5rem; } .earnings-month { font-size: .55rem; transform: rotate(-45deg); transform-origin: center; margin-top: .2rem; } .pie-panel .legend li { grid-template-columns: 12px minmax(0, 1fr); } .pie-panel .legend strong { grid-column: 2; } }
+
+/* Keep each admin menu item and its controls aligned in one horizontal row. */
+.menu-admin-list .edit-item-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: .9rem;
+    min-width: 0;
+}
+.menu-admin-list .edit-item-row > img {
+    flex: 0 0 72px;
+    width: 72px;
+    height: 72px;
+}
+.menu-admin-list .edit-item-row > .grow {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.menu-admin-list .edit-item-row > .grow strong {
+    display: block;
+    overflow-wrap: anywhere;
+}
+.menu-admin-list .edit-item-row > form,
+.menu-admin-list .edit-item-row > .icon-btn {
+    flex: 0 0 auto;
+    margin: 0;
+}
+.menu-admin-list .edit-item-row > form {
+    display: flex;
+    align-items: center;
+}
+@media (max-width: 560px) {
+    .menu-admin-list .edit-item-row {
+        gap: .5rem;
+        padding: .65rem;
+    }
+    .menu-admin-list .edit-item-row > img {
+        flex-basis: 52px;
+        width: 52px;
+        height: 52px;
+    }
+    .menu-admin-list .edit-item-row > .grow strong { font-size: .88rem; }
+    .menu-admin-list .edit-item-row > .grow span { font-size: .7rem; }
+    .menu-admin-list .edit-item-row > .icon-btn,
+    .menu-admin-list .edit-item-row > form button {
+        width: 32px;
+        height: 32px;
+    }
+}
+
+
+/* Admin menu: separated white cards with rounded edges. */
+.menu-admin-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.menu-admin-list .edit-item-row {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1rem 1.1rem;
+    margin: 0;
+    gap: 1rem;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(35, 25, 15, 0.06);
+}
+.menu-admin-list .edit-item-row > img {
+    border-radius: 12px;
+    object-fit: cover;
+    overflow: hidden;
+}
+@media (max-width: 560px) {
+    .menu-admin-list { gap: .75rem; }
+    .menu-admin-list .edit-item-row {
+        border-radius: 13px;
+        padding: .7rem;
+        gap: .5rem;
+    }
+    .menu-admin-list .edit-item-row > img { border-radius: 9px; }
+}
+
+/* Admin menu heading: keep Add item on the opposite side of Menu management. */
+.admin-page > section > .section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: nowrap;
+    width: 100%;
+    gap: 1rem;
+}
+.admin-page > section > .section-head h1 {
+    margin: 0;
+}
+.admin-page > section > .section-head .btn {
+    margin-left: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+@media (max-width: 420px) {
+    .admin-page > section > .section-head { gap: .5rem; }
+    .admin-page > section > .section-head h1 { font-size: 1.15rem; }
+    .admin-page > section > .section-head .btn { padding: .55rem .7rem; font-size: .8rem; }
+}
+
+
+/* Admin menu category filters, placed beneath the heading with clear breathing room. */
+.admin-page > section > .section-head {
+    margin-bottom: 1.5rem;
+}
+.menu-category-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .6rem;
+    margin: 0 0 1.5rem;
+    padding: 0 0 1.15rem;
+    border-bottom: 1px solid #eee7df;
+}
+.menu-category-filter {
+    appearance: none;
+    border: 1px solid #e8dfd5;
+    border-radius: 999px;
+    background: #fff;
+    color: #5c5148;
+    padding: .55rem 1rem;
+    font: inherit;
+    font-size: .9rem;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: background-color .18s ease, color .18s ease, border-color .18s ease;
+}
+.menu-category-filter:hover {
+    border-color: #b98b62;
+}
+.menu-category-filter.is-active {
+    background: #6f4932;
+    border-color: #6f4932;
+    color: #fff;
+}
+.menu-admin-list .edit-item-row[hidden] {
+    display: none !important;
+}
+@media (max-width: 560px) {
+    .admin-page > section > .section-head {
+        margin-bottom: 1.15rem;
+    }
+    .menu-category-filters {
+        gap: .45rem;
+        margin-bottom: 1.1rem;
+        padding-bottom: .9rem;
+    }
+    .menu-category-filter {
+        padding: .5rem .8rem;
+        font-size: .82rem;
+    }
 }

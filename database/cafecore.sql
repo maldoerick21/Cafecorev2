@@ -1,8 +1,6 @@
--- CaféCore uses MySQL or MariaDB.
--- Import this file in phpMyAdmin, or create the database manually first.
-CREATE DATABASE IF NOT EXISTS cafecore
+CREATE DATABASE IF NOT EXISTS cafecorev2
   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE cafecore;
+USE cafecorev2;
 
 CREATE TABLE IF NOT EXISTS users (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -10,14 +8,14 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(190) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
   role VARCHAR(30) NOT NULL DEFAULT 'customer',
-  phone VARCHAR(50) NULL,
+  phone VARCHAR(40) NULL,
   address TEXT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS categories (
   category_id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  category_name VARCHAR(120) NOT NULL UNIQUE
+  category_name VARCHAR(100) NOT NULL UNIQUE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS menu_items (
@@ -29,10 +27,8 @@ CREATE TABLE IF NOT EXISTS menu_items (
   image VARCHAR(255) NULL,
   available TINYINT(1) NOT NULL DEFAULT 1,
   featured TINYINT(1) NOT NULL DEFAULT 0,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_menu_items_category (category_id),
-  CONSTRAINT fk_menu_items_category FOREIGN KEY (category_id)
-    REFERENCES categories(category_id) ON UPDATE CASCADE ON DELETE RESTRICT
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_menu_items_category FOREIGN KEY (category_id) REFERENCES categories(category_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS orders (
@@ -40,10 +36,8 @@ CREATE TABLE IF NOT EXISTS orders (
   user_id INT UNSIGNED NOT NULL,
   total DECIMAL(10,2) NOT NULL,
   status VARCHAR(30) NOT NULL DEFAULT 'preparing',
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_orders_user_created (user_id, created_at),
-  CONSTRAINT fk_orders_user FOREIGN KEY (user_id)
-    REFERENCES users(id) ON UPDATE CASCADE ON DELETE RESTRICT
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_orders_user FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS order_items (
@@ -53,9 +47,16 @@ CREATE TABLE IF NOT EXISTS order_items (
   name VARCHAR(255) NOT NULL,
   qty INT UNSIGNED NOT NULL,
   price DECIMAL(10,2) NOT NULL,
-  INDEX idx_order_items_order (order_id),
-  CONSTRAINT fk_order_items_order FOREIGN KEY (order_id)
-    REFERENCES orders(id) ON UPDATE CASCADE ON DELETE CASCADE,
-  CONSTRAINT fk_order_items_menu FOREIGN KEY (menu_item_id)
-    REFERENCES menu_items(id) ON UPDATE CASCADE ON DELETE SET NULL
+  CONSTRAINT fk_order_items_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+  CONSTRAINT fk_order_items_menu_item FOREIGN KEY (menu_item_id) REFERENCES menu_items(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  otp_hash VARCHAR(255) NOT NULL,
+  expires_at DATETIME NOT NULL,
+  attempts INT NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_password_reset_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

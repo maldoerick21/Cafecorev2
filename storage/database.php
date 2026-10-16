@@ -4,7 +4,7 @@ $host = 'localhost';
 $port = 3306;
 $user = 'root';
 $password = '';
-$dbname = 'cafecore';
+$dbname = 'cafecorev2';
 
 $pdo = new PDO(
     "mysql:host={$host};port={$port};dbname={$dbname};charset=utf8mb4",

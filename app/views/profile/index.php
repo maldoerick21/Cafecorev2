@@ -17,11 +17,37 @@
                 Phone number
                 <input type="text" name="phone" value="<?= e($profile['phone'] ?? '') ?>">
             </label>
-            <label>
+            <label class="address-label">
                 Home address
-                <input type="text" name="address" value="<?= e($profile['address'] ?? '') ?>">
+                <div class="address-input-wrap">
+                    <button class="address-map-trigger" id="open-location-picker" type="button" aria-label="Choose home address on map" title="Choose location on map">
+                        <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                    </button>
+                    <input id="home-address" type="text" name="address" value="<?= e($profile['address'] ?? '') ?>" placeholder="Choose on map or enter address">
+                </div>
+                <small class="address-help">Tap the location icon to choose an address on the map.</small>
             </label>
             <button class="btn btn-primary" type="submit">Save changes</button>
         </form>
+    </div>
+
+    <div class="location-modal" id="location-picker-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="location-picker-title">
+        <div class="location-modal-backdrop" data-close-map></div>
+        <div class="location-modal-panel">
+            <div class="location-modal-header">
+                <div>
+                    <h2 id="location-picker-title">Choose your location</h2>
+                    <p>Click or tap anywhere on the map to place the pin.</p>
+                </div>
+                <button class="location-modal-close" type="button" data-close-map aria-label="Close map"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="address-map" class="address-map" aria-label="Interactive OpenStreetMap location picker"></div>
+            <p class="map-selection-status" id="map-selection-status" aria-live="polite">Click or tap the map to select a location.</p>
+            <div class="location-modal-actions">
+                <button class="btn btn-outline" type="button" data-close-map>Cancel</button>
+                <button class="btn btn-primary" type="button" id="use-selected-location" disabled>Use this location</button>
+            </div>
+            <p class="map-attribution-note">Map data © OpenStreetMap contributors</p>
+        </div>
     </div>
 </section>

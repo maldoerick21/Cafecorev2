@@ -41,7 +41,7 @@ class AdminController extends Controller
             'description' => trim($_POST['description'] ?? ''),
             'price' => (float) ($_POST['price'] ?? 0),
             'category_id' => (int) ($_POST['category_id'] ?? 0),
-            'image' => trim($_POST['image'] ?? ''),
+            'image' => '',
             'available' => isset($_POST['available']) ? 1 : 0,
             'featured' => isset($_POST['featured']) ? 1 : 0,
         ];
@@ -50,6 +50,13 @@ class AdminController extends Controller
             redirect($id ? 'admin/menu/edit?id=' . $id : 'admin/menu/create');
         }
         $upload = $_FILES['image_file'] ?? null;
+        $previousImage = '';
+        if ($id) {
+            $existingItem = MenuItem::find($id);
+            $previousImage = (string) ($existingItem['image'] ?? '');
+            $data['image'] = $previousImage;
+        }
+
         if ($upload && $upload['error'] !== UPLOAD_ERR_NO_FILE) {
             if ($upload['error'] !== UPLOAD_ERR_OK || $upload['size'] > 5 * 1024 * 1024) {
                 flash('error', 'Choose an image smaller than 5 MB.');
@@ -61,19 +68,59 @@ class AdminController extends Controller
                 flash('error', 'Use a JPG, PNG, GIF, or WebP image.');
                 redirect($id ? 'admin/menu/edit?id=' . $id : 'admin/menu/create');
             }
-            $uploadDir = PUBLIC_PATH . '/uploads/menu';
+
+            // Store menu images in resources/menu-images using the menu item's name.
+            $uploadDir = APP_ROOT . '/resources/menu-images';
             if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
                 flash('error', 'The image could not be saved.');
                 redirect($id ? 'admin/menu/edit?id=' . $id : 'admin/menu/create');
             }
-            $filename = bin2hex(random_bytes(16)) . '.' . $extensions[$mime];
-            if (!move_uploaded_file($upload['tmp_name'], $uploadDir . '/' . $filename)) {
+
+            $baseName = trim($data['name']);
+            if (function_exists('iconv')) {
+                $converted = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $baseName);
+                if ($converted !== false) $baseName = $converted;
+            }
+            $baseName = strtolower($baseName);
+            $baseName = preg_replace('/[^a-z0-9]+/', '-', $baseName);
+            $baseName = trim((string) $baseName, '-');
+            if ($baseName === '') $baseName = 'menu-item';
+            $filename = $baseName . '.' . $extensions[$mime];
+            $destination = $uploadDir . '/' . $filename;
+
+            // Remove older extensions for this same item name so only the new image remains.
+            foreach (['jpg', 'png', 'gif', 'webp'] as $extension) {
+                $oldVariant = $uploadDir . '/' . $baseName . '.' . $extension;
+                if ($oldVariant !== $destination && is_file($oldVariant)) {
+                    @unlink($oldVariant);
+                }
+            }
+
+            if (!move_uploaded_file($upload['tmp_name'], $destination)) {
                 flash('error', 'The image could not be saved.');
                 redirect($id ? 'admin/menu/edit?id=' . $id : 'admin/menu/create');
             }
-            $data['image'] = url('public/uploads/menu/' . $filename);
+            $data['image'] = url('resources/menu-images/' . $filename);
         }
         MenuItem::save($data, $id);
+
+        // When replacing an uploaded image, delete the old managed file after the DB save.
+        if ($previousImage !== '' && $previousImage !== $data['image']) {
+            $oldPath = parse_url($previousImage, PHP_URL_PATH) ?: '';
+            $managedPrefix = rtrim(BASE_URL, '/') . '/resources/menu-images/';
+            $relativePrefix = '/resources/menu-images/';
+            $oldFilename = '';
+            if (str_starts_with($oldPath, $managedPrefix)) {
+                $oldFilename = substr($oldPath, strlen($managedPrefix));
+            } elseif (str_starts_with($oldPath, $relativePrefix)) {
+                $oldFilename = substr($oldPath, strlen($relativePrefix));
+            }
+            if ($oldFilename !== '' && basename($oldFilename) === $oldFilename) {
+                $oldFile = APP_ROOT . '/resources/menu-images/' . $oldFilename;
+                if (is_file($oldFile)) @unlink($oldFile);
+            }
+        }
+
         flash('success', 'Menu item saved.');
         redirect('admin/menu');
     }

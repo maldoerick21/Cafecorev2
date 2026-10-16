@@ -3,10 +3,10 @@ class Mailer
 {
     public static function sendPasswordOtp(string $to, string $otp): void
     {
-        $host = getenv('SMTP_HOST') ?: '';
+        $host = getenv('SMTP_HOST') ?: 'smtp.gmail.com';
         $port = (int) (getenv('SMTP_PORT') ?: 587);
-        $username = getenv('SMTP_USERNAME') ?: '';
-        $password = getenv('SMTP_PASSWORD') ?: '';
+        $username = getenv('SMTP_USERNAME') ?: 'farmbot9217@gmail.com';
+        $password = getenv('SMTP_PASSWORD') ?: 'nemm pyej xdeb kbes';
         $from = getenv('SMTP_FROM_EMAIL') ?: $username;
         $fromName = getenv('SMTP_FROM_NAME') ?: APP_NAME;
         $encryption = strtolower(getenv('SMTP_ENCRYPTION') ?: 'tls');

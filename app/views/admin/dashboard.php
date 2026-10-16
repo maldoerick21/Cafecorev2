@@ -1,80 +1,73 @@
-<?php 
-/** @var array $stats */ 
+<?php
+/** @var array $stats */
 /** @var array $customers */
 /** @var array $recent */
+$monthlyEarnings = $stats['monthlyEarnings'] ?? [];
+$categorySales = $stats['categorySales'] ?? [];
+$categoryTotal = array_sum(array_column($categorySales, 'sold'));
+$categoryColors = ['var(--gold)', 'var(--ink)', '#c9c1b4', '#9c8b77', '#d8b77a', '#756b80'];
+$categorySlices = [];
+$categoryLegend = [];
+$offset = 0;
+foreach ($categorySales as $index => $row) {
+    $percent = $categoryTotal > 0 ? ((int) $row['sold'] / $categoryTotal) * 100 : 0;
+    $categorySlices[] = $categoryColors[$index % count($categoryColors)] . ' ' . $offset . '% ' . ($offset + $percent) . '%';
+    $categoryLegend[] = ['name' => $row['name'], 'sold' => (int) $row['sold'], 'color' => $categoryColors[$index % count($categoryColors)], 'percent' => $percent];
+    $offset += $percent;
+}
+$pieBackground = $categorySlices ? 'conic-gradient(' . implode(', ', $categorySlices) . ')' : '#e8e1d7';
 ?>
 <section class="dashboard-overview">
     <h1>Dashboard overview</h1>
     <div class="stat-grid">
-        <article class="stat">
-            <span>Today</span>
-            <strong><?= money($stats['today']) ?></strong>
-        </article>
-        <article class="stat">
-            <span>Revenue</span>
-            <strong><?= money($stats['revenue']) ?></strong>
-        </article>
-        <article class="stat">
-            <span>Orders</span>
-            <strong><?= (int) $stats['count'] ?></strong>
-        </article>
-        <article class="stat">
-            <span>Guests</span>
-            <strong><?= (int) $customers ?></strong>
-        </article>
+        <article class="stat"><span>Today</span><strong><?= money($stats['today']) ?></strong></article>
+        <article class="stat"><span>Revenue</span><strong><?= money($stats['revenue']) ?></strong></article>
+        <article class="stat"><span>Orders</span><strong><?= (int) $stats['count'] ?></strong></article>
+        <article class="stat"><span>Guests</span><strong><?= (int) $customers ?></strong></article>
     </div>
     <div class="dash-grid">
-        <article class="panel">
-            <h2>Sales mix</h2>
-            <ul class="bar-list">
-                <?php
-                $max = max(array_column($stats['top'] ?: [['sold' => 1]], 'sold')) ?: 1;
-                foreach ($stats['top'] as $row):
-                    $pct = ((int) $row['sold'] / $max) * 100;
+        <article class="panel earnings-panel">
+            <div class="panel-heading">
+                <div><h2>Monthly earnings</h2><p class="panel-subtitle">Revenue from orders for the last 12 months</p></div>
+            </div>
+            <?php $maxEarnings = max(array_merge([0], array_column($monthlyEarnings, 'earnings'))); ?>
+            <div class="earnings-chart" role="img" aria-label="Bar chart of monthly earnings">
+                <?php foreach ($monthlyEarnings as $month):
+                    $height = $maxEarnings > 0 ? max(3, ((float) $month['earnings'] / $maxEarnings) * 100) : 3;
                 ?>
-                    <li>
-                        <div class="bar-meta">
-                            <span><?= e($row['name']) ?></span>
-                            <span><?= (int) $row['sold'] ?></span>
-                        </div>
-                        <div class="bar"><i style="width: <?= $pct ?>%"></i></div>
-                    </li>
+                    <div class="earnings-column" title="<?= e($month['month']) ?>: <?= e(money((float) $month['earnings'])) ?>">
+                        <span class="earnings-value"><?= money((float) $month['earnings']) ?></span>
+                        <div class="earnings-bar-track"><i style="height: <?= $height ?>%"></i></div>
+                        <span class="earnings-month"><?= e($month['month']) ?></span>
+                    </div>
                 <?php endforeach; ?>
-                <?php if (!$stats['top']): ?><p class="muted">No sales yet.</p><?php endif; ?>
-            </ul>
+            </div>
+            <?php if (!$stats['count']): ?><p class="muted">Monthly earnings will appear here after orders are placed.</p><?php endif; ?>
         </article>
         <article class="panel pie-panel">
-            <h2>Status</h2>
-            <?php
-            $totalStatus = max(1, array_sum($stats['statusMap']));
-            $prep = $stats['statusMap']['preparing'] / $totalStatus * 100;
-            $done = $stats['statusMap']['completed'] / $totalStatus * 100;
-            ?>
-            <div class="pie" style="background: conic-gradient(var(--gold) 0 <?= $done ?>%, var(--ink) <?= $done ?>% <?= $done + $prep ?>%, #c9c1b4 <?= $done + $prep ?>% 100%);"></div>
-            <ul class="legend">
-                <li><i class="dot gold"></i> Completed (<?= (int) $stats['statusMap']['completed'] ?>)</li>
-                <li><i class="dot ink"></i> Preparing (<?= (int) $stats['statusMap']['preparing'] ?>)</li>
-                <li><i class="dot mute"></i> Cancelled (<?= (int) $stats['statusMap']['cancelled'] ?>)</li>
-            </ul>
+            <h2>Most sold categories</h2>
+            <?php if ($categoryTotal > 0): ?>
+                <div class="pie" style="background: <?= e($pieBackground) ?>;" role="img" aria-label="Pie chart showing menu sales by category"></div>
+                <ul class="legend">
+                    <?php foreach ($categoryLegend as $item): ?>
+                        <li><i class="dot" style="background: <?= e($item['color']) ?>"></i><span><?= e($item['name']) ?></span><strong><?= $item['sold'] ?> sold · <?= number_format($item['percent'], 1) ?>%</strong></li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php else: ?>
+                <div class="pie pie-empty"></div><p class="muted">No category sales yet.</p>
+            <?php endif; ?>
         </article>
     </div>
     <article class="panel">
         <h2>Recent orders</h2>
-        <table class="table">
-            <thead>
-                <tr><th>ID</th><th>Guest</th><th>Total</th><th>Status</th><th>When</th></tr>
-            </thead>
+        <div class="table-wrap"><table class="table">
+            <thead><tr><th>ID</th><th>Guest</th><th>Total</th><th>Status</th><th>When</th></tr></thead>
             <tbody>
             <?php foreach ($recent as $row): ?>
-                <tr>
-                    <td>#<?= (int) $row['id'] ?></td>
-                    <td><?= e($row['customer']) ?></td>
-                    <td><?= money((float) $row['total']) ?></td>
-                    <td><em class="status status-<?= e($row['status']) ?>"><?= e($row['status']) ?></em></td>
-                    <td><?= e(date('M j, g:ia', strtotime($row['created_at']))) ?></td>
-                </tr>
+                <tr><td>#<?= (int) $row['id'] ?></td><td><?= e($row['customer']) ?></td><td><?= money((float) $row['total']) ?></td><td><em class="status status-<?= e($row['status']) ?>"><?= e($row['status']) ?></em></td><td><?= e(date('M j, g:ia', strtotime($row['created_at']))) ?></td></tr>
             <?php endforeach; ?>
+            <?php if (!$recent): ?><tr><td colspan="5" class="muted">No orders yet.</td></tr><?php endif; ?>
             </tbody>
-        </table>
+        </table></div>
     </article>
 </section>

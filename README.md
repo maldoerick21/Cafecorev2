@@ -6,9 +6,12 @@ Tech Stack:
 - PHP
 - MYSQL
 
+Folder Structure:
+- MVC
+
 ## Run locally
 
-PHP 8.1+ with MySQL/MariaDB and the `cafecore` database:
+PHP 8.1+ with PDO MySQL, PDO SQLite (needed only for the one-time import), and MySQL/MariaDB. Create/import the `cafecorev2` database using `cafecore.sql`.
 
 ```bash
 php -S localhost:8080 router.php
@@ -16,13 +19,7 @@ php -S localhost:8080 router.php
 
 Then open http://localhost:8080
 
-## Demo accounts
-
-| Role | Email | Password |
-| Customer | customer@cafecore.test | password |
-| Admin | admin@cafecore.test | password |
-
-Tables and demo data are created automatically on first visit. Database credentials are configured in `storage/database.php`.
+The application connects to MySQL, not SQLite. Connection defaults are `127.0.0.1:3306`, database `cafecorev2`, user `root`, and an empty password. Override them with `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` environment variables.
 
 ## Structure
 
@@ -31,7 +28,7 @@ Tables and demo data are created automatically on first visit. Database credenti
 - `app/controllers` — auth, home, cart, orders, profile, admin
 - `app/models` — User, MenuItem, Order, Cart
 - `app/views` — screens + layouts
-- `public/css/style.css` — Poppins + Font Awesome kit
+- `public/css` — all the designnof the project
 
 
 ## Forgot password email (OTP) setup
@@ -60,5 +57,3 @@ $env:SMTP_FROM_EMAIL="your-email@gmail.com"
 $env:SMTP_FROM_NAME="CaféCore"
 php -S localhost:8080 router.php
 ```
-
-Keep SMTP credentials private and never commit them to a public repository. The database creates the `password_reset_tokens` table automatically.

@@ -24,7 +24,6 @@
             <nav>
                 <a href="<?= url('admin') ?>" class="<?= ($title ?? '') === 'Dashboard' ? 'is-active' : '' ?>" title="Dashboard"><i class="fa-solid fa-chart-pie"></i><span>Dashboard</span></a>
                 <a href="<?= url('admin/menu') ?>" class="<?= in_array($title ?? '', ['Menu management', 'Edit item', 'New item'], true) ? 'is-active' : '' ?>" title="Menu"><i class="fa-solid fa-utensils"></i><span>Menu</span></a>
-                <a href="<?= url('home') ?>" title="Storefront"><i class="fa-solid fa-store"></i><span>Storefront</span></a>
             </nav>
             <a class="sidebar-logout" href="<?= url('logout') ?>" title="Log out"><i class="fa-solid fa-right-from-bracket"></i><span>Log out</span></a>
         </div>
@@ -49,6 +48,7 @@
             <?= $content ?>
         </main>
     </div>
+    <script src="<?= asset('js/flash.js') ?>"></script>
     <script>
         const navToggle = document.querySelector('.admin-nav-toggle');
         const navPanel = document.getElementById('admin-nav-panel');
