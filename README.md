@@ -2,7 +2,8 @@
 
 Tech Stack:
 - HTML
-- CSS 
+- CSS
+- JS
 - PHP
 - MYSQL
 
