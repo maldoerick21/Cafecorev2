@@ -30,7 +30,7 @@
             <?php endforeach; ?>
         </div>
     </div>
-    <div class="item-grid">
+    <div class="item-grid" data-pagination-list="home-menu">
         <?php foreach ($items as $item): ?>
             <article class="item-card" data-category="<?= e($item['category']) ?>" role="link" tabindex="0" data-href="<?= e(url('menu/item?id=' . (int) $item['id'])) ?>">
                 <div class="item-photo">
@@ -52,4 +52,5 @@
             </article>
         <?php endforeach; ?>
     </div>
+    <div class="pagination" data-pagination="home-menu" aria-label="Menu pages"></div>
 </section>

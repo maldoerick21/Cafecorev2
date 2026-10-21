@@ -62,12 +62,42 @@ $pieBackground = $categorySlices ? 'conic-gradient(' . implode(', ', $categorySl
         <h2>Recent orders</h2>
         <div class="table-wrap"><table class="table">
             <thead><tr><th>ID</th><th>Guest</th><th>Total</th><th>Status</th><th>When</th></tr></thead>
-            <tbody>
+            <tbody data-pagination-list="recent-orders">
             <?php foreach ($recent as $row): ?>
                 <tr><td>#<?= (int) $row['id'] ?></td><td><?= e($row['customer']) ?></td><td><?= money((float) $row['total']) ?></td><td><em class="status status-<?= e($row['status']) ?>"><?= e($row['status']) ?></em></td><td><?= e(date('M j, g:ia', strtotime($row['created_at']))) ?></td></tr>
             <?php endforeach; ?>
             <?php if (!$recent): ?><tr><td colspan="5" class="muted">No orders yet.</td></tr><?php endif; ?>
             </tbody>
         </table></div>
+        <div class="pagination" data-pagination="recent-orders" aria-label="Recent order pages"></div>
     </article>
 </section>
+<script>
+(() => {
+    const body = document.querySelector('[data-pagination-list="recent-orders"]');
+    const pager = document.querySelector('[data-pagination="recent-orders"]');
+    if (!body || !pager) return;
+    const rows = [...body.querySelectorAll('tr')].filter(row => !row.querySelector('.muted'));
+    const pageSize = 5;
+    let page = 1;
+    function render() {
+        const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+        page = Math.min(page, pageCount);
+        rows.forEach((row, index) => { row.hidden = index < (page - 1) * pageSize || index >= page * pageSize; });
+        pager.replaceChildren();
+        if (rows.length <= pageSize) return;
+        const addButton = (label, target, disabled = false, active = false) => {
+            const button = document.createElement('button');
+            button.type = 'button'; button.className = 'page-button' + (active ? ' is-active' : '');
+            button.textContent = label; button.disabled = disabled;
+            if (active) button.setAttribute('aria-current', 'page');
+            button.addEventListener('click', () => { page = target; render(); });
+            pager.append(button);
+        };
+        addButton('<', page - 1, page === 1);
+        for (let n = 1; n <= pageCount; n++) addButton(String(n), n, false, n === page);
+        addButton('>', page + 1, page === pageCount);
+    }
+    render();
+})();
+</script>

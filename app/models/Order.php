@@ -55,14 +55,17 @@ class Order
         }
         return $rows;
     }
-    public static function allRecent(int $limit = 8): array
+    public static function allRecent(?int $limit = null): array
     {
-        $stmt = Database::connect()->prepare(
-            'SELECT o.*, u.name AS customer FROM orders o JOIN users u ON u.id = o.user_id ORDER BY o.created_at DESC LIMIT ?'
-        );
-        $stmt->bindValue(1, $limit, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetchAll();
+        $sql = 'SELECT o.*, u.name AS customer FROM orders o JOIN users u ON u.id = o.user_id ORDER BY o.created_at DESC';
+        if ($limit !== null) {
+            $sql .= ' LIMIT ?';
+            $stmt = Database::connect()->prepare($sql);
+            $stmt->bindValue(1, max(1, $limit), PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll();
+        }
+        return Database::connect()->query($sql)->fetchAll();
     }
     public static function stats(): array
     {

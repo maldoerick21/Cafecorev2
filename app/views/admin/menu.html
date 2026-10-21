@@ -20,7 +20,7 @@
             <button type="button" class="menu-category-filter" data-category-filter="<?= e($categoryName) ?>" aria-pressed="false"><?= e($categoryName) ?></button>
         <?php endforeach; ?>
     </nav>
-    <div class="menu-admin-list">
+    <div class="menu-admin-list" data-pagination-list="admin-menu">
         <?php foreach ($items as $item): ?>
             <article class="edit-item-row" data-menu-category="<?= e(trim((string) ($item['category'] ?? ''))) ?>">
                 <img src="<?= e($item['image']) ?>" alt="">
@@ -46,25 +46,47 @@
             </article>
         <?php endforeach; ?>
     </div>
+    <div class="pagination" data-pagination="admin-menu" aria-label="Menu pages"></div>
 </section>
 <script>
 (() => {
-    const filters = document.querySelectorAll('[data-category-filter]');
-    const rows = document.querySelectorAll('.menu-admin-list [data-menu-category]');
-    if (!filters.length || !rows.length) return;
-
-    filters.forEach((button) => {
-        button.addEventListener('click', () => {
-            const selected = button.dataset.categoryFilter;
-            filters.forEach((filter) => {
-                const active = filter === button;
-                filter.classList.toggle('is-active', active);
-                filter.setAttribute('aria-pressed', active ? 'true' : 'false');
-            });
-            rows.forEach((row) => {
-                row.hidden = selected !== 'all' && row.dataset.menuCategory !== selected;
-            });
+    const filters = [...document.querySelectorAll('[data-category-filter]')];
+    const rows = [...document.querySelectorAll('.menu-admin-list [data-menu-category]')];
+    const pager = document.querySelector('[data-pagination="admin-menu"]');
+    if (!pager || !rows.length) return;
+    const pageSize = 6;
+    let selected = 'all';
+    let page = 1;
+    const filteredRows = () => rows.filter(row => selected === 'all' || row.dataset.menuCategory === selected);
+    function render() {
+        const matches = filteredRows();
+        const pageCount = Math.max(1, Math.ceil(matches.length / pageSize));
+        page = Math.min(page, pageCount);
+        rows.forEach(row => { row.hidden = true; });
+        matches.slice((page - 1) * pageSize, page * pageSize).forEach(row => { row.hidden = false; });
+        pager.replaceChildren();
+        if (matches.length <= pageSize) return;
+        const addButton = (label, target, disabled = false, active = false) => {
+            const button = document.createElement('button');
+            button.type = 'button'; button.className = 'page-button' + (active ? ' is-active' : '');
+            button.textContent = label; button.disabled = disabled;
+            if (active) button.setAttribute('aria-current', 'page');
+            button.addEventListener('click', () => { page = target; render(); });
+            pager.append(button);
+        };
+        addButton('‹', page - 1, page === 1);
+        for (let n = 1; n <= pageCount; n++) addButton(String(n), n, false, n === page);
+        addButton('›', page + 1, page === pageCount);
+    }
+    filters.forEach(button => button.addEventListener('click', () => {
+        selected = button.dataset.categoryFilter; page = 1;
+        filters.forEach(filter => {
+            const active = filter === button;
+            filter.classList.toggle('is-active', active);
+            filter.setAttribute('aria-pressed', active ? 'true' : 'false');
         });
-    });
+        render();
+    }));
+    render();
 })();
 </script>

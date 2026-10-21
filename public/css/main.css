@@ -215,3 +215,11 @@ body.map-open { overflow: hidden; }
     .payment-method-icon { width: 34px; height: 34px; flex-basis: 34px; }
     .payment-method-copy small { font-size: .7rem; }
 }
+
+
+/* Shared pagination controls (5 records per page) */
+.pagination { width: 100%; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: .4rem; margin: 1.25rem auto .4rem; background-color: transparent; text-align: center; }
+.page-button { min-width: 36px; height: 36px; padding: 0 .7rem; appearance: none; border: 1px solid var(--line, #ded8ce); border-radius: 10px; background-color: transparent; color: var(--ink, #292622); font: inherit; font-size: .85rem; cursor: pointer; }
+.page-button:hover:not(:disabled), .page-button.is-active { background-color: transparent; color: var(--navy, #27233b); border-color: var(--navy, #27233b); }
+.page-button:disabled { background-color: transparent; opacity: .4; cursor: not-allowed; }
+[data-pagination-list] > [hidden], tbody tr[hidden], .item-card[hidden] { display: none !important; }
