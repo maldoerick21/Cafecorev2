@@ -17,7 +17,7 @@ class Order
                 $lines[] = [$item, $qty, $price, $displayName];
             }
             if (!$lines) throw new RuntimeException('Cart is empty.');
-            $total += 15;
+            // Orders paid and picked up at the counter have no service fee.
             $stmt = $pdo->prepare('INSERT INTO orders (user_id, total, status) VALUES (?, ?, ?)');
             $stmt->execute([$userId, $total, 'preparing']);
             $orderId = (int) $pdo->lastInsertId();

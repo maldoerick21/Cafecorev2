@@ -196,3 +196,22 @@ body.map-open { overflow: hidden; }
         box-shadow: 0 -8px 28px rgba(22, 20, 31, .14);
     }
 }
+
+
+/* Checkout payment method: counter payment only for now. */
+.checkout-place-form { display: grid; gap: .9rem; }
+.payment-method { border: 0; padding: 0; margin: 0; min-width: 0; }
+.payment-method legend { margin-bottom: .55rem; color: var(--navy); font-weight: 700; font-size: .95rem; }
+.payment-method-option { display: flex; align-items: center; gap: .7rem; padding: .85rem; border: 1px solid var(--navy); border-radius: 14px; background: #fff; cursor: pointer; box-shadow: inset 0 0 0 1px var(--navy); }
+.payment-method-option input { width: 17px; height: 17px; flex: 0 0 auto; accent-color: var(--navy); }
+.payment-method-icon { width: 40px; height: 40px; flex: 0 0 40px; display: grid; place-items: center; border-radius: 12px; background: var(--mist); color: var(--gold-deep); font-size: 1.1rem; }
+.payment-method-copy { min-width: 0; flex: 1; display: grid; gap: .2rem; }
+.payment-method-copy strong { color: var(--navy); font-size: .88rem; }
+.payment-method-copy small { color: #6e687a; font-size: .73rem; line-height: 1.45; }
+.payment-method-check { color: var(--navy); flex: 0 0 auto; }
+.payment-method-option:focus-within { outline: 2px solid var(--gold-deep); outline-offset: 3px; }
+@media (max-width: 380px) {
+    .payment-method-option { gap: .5rem; padding: .7rem; }
+    .payment-method-icon { width: 34px; height: 34px; flex-basis: 34px; }
+    .payment-method-copy small { font-size: .7rem; }
+}

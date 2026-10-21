@@ -42,8 +42,19 @@
             <div><dt>Service</dt><dd><?= money($cart['service']) ?></dd></div>
             <div class="total"><dt>Total</dt><dd><?= money($cart['total']) ?></dd></div>
         </dl>
-        <form method="post" action="<?= url('checkout') ?>">
+        <form method="post" action="<?= url('checkout') ?>" class="checkout-place-form">
             <?= csrf_field() ?>
+            <fieldset class="payment-method" <?= $cart['lines'] ? '' : 'disabled' ?>>
+                <legend>Payment method</legend>
+                <label class="payment-method-option">
+                    <input type="radio" name="payment_method" value="counter" checked required>
+                    <span class="payment-method-icon" aria-hidden="true"><i class="fa-solid fa-cash-register"></i></span>
+                    <span class="payment-method-copy">
+                        <strong>Over the counter</strong>
+                    </span>
+                    <i class="fa-solid fa-circle-check payment-method-check" aria-hidden="true"></i>
+                </label>
+            </fieldset>
             <button class="btn btn-primary btn-block" type="submit" <?= $cart['lines'] ? '' : 'disabled' ?>>
                 Place order
             </button>

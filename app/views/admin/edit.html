@@ -42,7 +42,10 @@
                 <label class="check"><input type="checkbox" name="available" <?= !isset($item) || $item['available'] ? 'checked' : '' ?>> Available</label>
                 <label class="check"><input type="checkbox" name="featured" <?= !empty($item['featured']) ? 'checked' : '' ?>> Featured</label>
             </div>
-            <button class="btn btn-primary" type="submit">Save item</button>
+            <div class="edit-form-actions">
+                <button class="btn btn-primary" type="submit">Save item</button>
+                <a class="btn btn-cancel-edit" href="<?= url('admin/menu') ?>">Cancel edit</a>
+            </div>
         </div>
     </form>
 </section>

@@ -3,7 +3,6 @@ define('APP_NAME', 'CaféCore');
 define('APP_ROOT', dirname(__DIR__));
 define('PUBLIC_PATH', APP_ROOT . '/public');
 define('STORAGE_PATH', APP_ROOT . '/storage');
-// MySQL connection settings can be overridden with DB_HOST, DB_PORT, DB_NAME, DB_USER, and DB_PASSWORD environment variables.
 $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
 if ($scriptDir === '/' || $scriptDir === '\\' || $scriptDir === '.') {
     $scriptDir = '';

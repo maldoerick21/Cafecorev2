@@ -47,8 +47,8 @@ class AuthController extends Controller
             flash('error', 'Enter a valid email address.');
             redirect('signup');
         }
-        if (strlen($password) < 6) {
-            flash('error', 'Password must be at least 6 characters.');
+        if (strlen($password) < 8) {
+            flash('error', 'Password must be at least 8 characters.');
             redirect('signup');
         }
         if ($password !== $confirm) {
@@ -106,7 +106,7 @@ class AuthController extends Controller
             try {
                 Mailer::sendPasswordOtp($user['email'], $otp);
             } catch (Throwable $error) {
-                // Remove the unusable OTP if delivery failed.
+
                 $reset = User::getPasswordReset((int) $user['id']);
                 if ($reset) {
                     Database::connect()->prepare('DELETE FROM password_reset_tokens WHERE id = ?')->execute([$reset['id']]);

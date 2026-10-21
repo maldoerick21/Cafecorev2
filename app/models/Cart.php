@@ -45,7 +45,8 @@ class Cart
             $line = $price * $qty; $subtotal += $line;
             $lines[] = ['key' => (string)$key, 'item' => $item, 'qty' => $qty, 'size' => $size, 'sugar' => $sugar, 'price' => $price, 'line' => $line];
         }
-        $service = $subtotal > 0 ? 15 : 0;
+        // Over-the-counter pickup has no service fee.
+        $service = 0;
         return ['lines' => $lines, 'subtotal' => $subtotal, 'service' => $service, 'total' => $subtotal + $service];
     }
 }
