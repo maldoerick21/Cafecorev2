@@ -1,0 +1,105 @@
+<?php /** @var array $orders */ ?>
+<?php /** @var array $summary */ ?>
+<section class="staff-workspace">
+    <div class="section-head">
+        <div>
+            <h1>Staff orders</h1>
+            <p class="staff-intro">Create customer orders and keep service moving.</p>
+        </div>
+        <a class="btn btn-primary" href="<?= url('staff/orders/create') ?>"><i class="fa-solid fa-plus"></i> New order</a>
+    </div>
+
+    <div class="staff-summary">
+        <article><span>All orders</span><strong><?= (int) $summary['total'] ?></strong></article>
+        <article><span>Preparing</span><strong><?= (int) $summary['preparing'] ?></strong></article>
+        <article><span>Completed today</span><strong><?= (int) $summary['completed_today'] ?></strong></article>
+        <article><span>Payments pending</span><strong><?= (int) $summary['unpaid'] ?></strong></article>
+    </div>
+
+    <form method="get" action="<?= url('staff/orders') ?>" class="staff-order-filters">
+        <label>
+            <span class="sr-only">Search orders or customers</span>
+            <input type="search" name="q" value="<?= e($search) ?>" placeholder="Order number, customer, or email">
+        </label>
+        <label>
+            <span class="sr-only">Filter by order status</span>
+            <select name="status">
+                <option value="">All statuses</option>
+                <?php foreach (['preparing', 'completed', 'cancelled'] as $status): ?>
+                    <option value="<?= e($status) ?>" <?= $statusFilter === $status ? 'selected' : '' ?>><?= e(ucfirst($status)) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-magnifying-glass"></i> Find orders</button>
+        <?php if ($search !== '' || $statusFilter !== ''): ?>
+            <a class="btn btn-cancel-edit" href="<?= url('staff/orders') ?>">Clear</a>
+        <?php endif; ?>
+    </form>
+
+    <div class="staff-orders-list">
+        <?php if (!$orders): ?>
+            <div class="empty"><i class="fa-solid fa-receipt"></i><p>No matching orders.</p></div>
+        <?php endif; ?>
+        <?php foreach ($orders as $order): ?>
+            <article class="staff-order-card">
+                <header class="staff-order-heading">
+                    <div>
+                        <strong>Order #<?= (int) $order['id'] ?></strong>
+                        <span><?= e(date('M j, Y · g:ia', strtotime($order['created_at']))) ?></span>
+                    </div>
+                    <strong><?= money((float) $order['total']) ?></strong>
+                </header>
+                <div class="staff-order-customer">
+                    <strong><?= e($order['customer']) ?></strong>
+                    <span><?= e($order['email']) ?></span>
+                </div>
+                <p class="staff-order-items"><?= e($order['items_summary']) ?></p>
+                <div class="staff-order-controls">
+                    <form method="post" action="<?= url('staff/orders/status') ?>">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="order_id" value="<?= (int) $order['id'] ?>">
+                        <input type="hidden" name="return_status" value="<?= e($statusFilter) ?>">
+                        <input type="hidden" name="return_search" value="<?= e($search) ?>">
+                        <label>
+                            <span>Order status</span>
+                            <select name="status">
+                                <?php foreach (['preparing', 'completed', 'cancelled'] as $status): ?>
+                                    <option value="<?= e($status) ?>" <?= $order['status'] === $status ? 'selected' : '' ?>><?= e(ucfirst($status)) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <button class="btn btn-primary" type="submit">Update</button>
+                    </form>
+                    <?php if ($order['payment_status'] !== null): ?>
+                        <form method="post" action="<?= url('staff/orders/payment') ?>">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="order_id" value="<?= (int) $order['id'] ?>">
+                            <input type="hidden" name="return_status" value="<?= e($statusFilter) ?>">
+                            <input type="hidden" name="return_search" value="<?= e($search) ?>">
+                            <label>
+                                <span>Payment status</span>
+                                <select name="payment_status">
+                                    <?php foreach (['pending', 'paid', 'refunded'] as $paymentStatus): ?>
+                                        <option value="<?= e($paymentStatus) ?>" <?= $order['payment_status'] === $paymentStatus ? 'selected' : '' ?>><?= e(ucfirst($paymentStatus)) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                            <label>
+                                <span>Method</span>
+                                <select name="payment_method">
+                                    <?php foreach (['counter' => 'Counter', 'cash' => 'Cash', 'card' => 'Card', 'e_wallet' => 'E-wallet'] as $method => $label): ?>
+                                        <option value="<?= e($method) ?>" <?= $order['payment_method'] === $method ? 'selected' : '' ?>><?= e($label) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                            <button class="btn btn-cancel-edit" type="submit">Save payment</button>
+                        </form>
+                    <?php else: ?>
+                        <p class="staff-payment-missing">Payment record unavailable</p>
+                    <?php endif; ?>
+                </div>
+            </article>
+        <?php endforeach; ?>
+    </div>
+    <?php if (count($orders) === 100): ?><p class="staff-result-limit">Showing the latest 100 matching orders. Use search or status filters to narrow the list.</p><?php endif; ?>
+</section>

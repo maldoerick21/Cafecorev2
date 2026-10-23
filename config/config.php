@@ -84,6 +84,23 @@ function require_admin(): array
     }
     return $user;
 }
+function require_staff(): array
+{
+    $user = require_auth();
+    $freshUser = User::find((int) ($user['id'] ?? 0));
+    if (!$freshUser) {
+        unset($_SESSION['user']);
+        flash('error', 'Your staff account is no longer available. Please sign in again.');
+        redirect('login');
+    }
+    $_SESSION['user'] = User::toSession($freshUser);
+    $user = $_SESSION['user'];
+    if (!in_array($user['role'] ?? '', ['admin', 'staff'], true)) {
+        flash('error', 'Staff access only.');
+        redirect('home');
+    }
+    return $user;
+}
 function money(float $amount): string
 {
     return '₱' . number_format($amount, 2);

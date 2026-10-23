@@ -1,31 +1,56 @@
 <?php /** @var array $orders */ ?>
-<?php /** @var int $processingOrderId */ ?>
-<section>
-    <h1>History</h1>
+<?php $staffLayout = $staffLayout ?? false; ?>
+<section class="<?= $staffLayout ? 'staff-workspace staff-history-workspace' : '' ?>">
+    <?php if ($staffLayout): ?>
+        <div class="section-head">
+            <div>
+                <h1>Order history</h1>
+                <p class="staff-intro">Your account's recent orders and payment details.</p>
+            </div>
+        </div>
+    <?php else: ?>
+        <h1>History</h1>
+    <?php endif; ?>
     <?php if (!$orders): ?>
-        <div class="empty">
+        <div class="empty <?= $staffLayout ? 'staff-history-empty' : '' ?>">
             <i class="fa-solid fa-clock-rotate-left"></i>
             <p>No orders yet.</p>
         </div>
     <?php else: ?>
-        <div class="history-list">
+        <div class="history-list <?= $staffLayout ? 'staff-history-list' : '' ?>">
             <?php foreach ($orders as $order): ?>
-                <article class="history-order">
-                    <header>
+                <article class="history-order <?= $staffLayout ? 'staff-order-card' : '' ?>">
+                    <header class="<?= $staffLayout ? 'staff-order-heading' : '' ?>">
                         <div>
                             <strong>Order #<?= (int) $order['id'] ?></strong>
                             <span><?= e(date('M j, Y · g:ia', strtotime($order['created_at']))) ?></span>
                         </div>
                         <em class="status status-<?= e($order['status']) ?>"><?= e($order['status']) ?></em>
                     </header>
-                    <?php if ((int) $processingOrderId === (int) $order['id'] && $order['status'] === 'preparing'): ?>
-                        <div class="order-processing" data-order-id="<?= (int) $order['id'] ?>" aria-live="polite">
-                            <span class="processing-label">Preparing your order</span> · <span class="processing-timer"><span class="processing-countdown">7</span>s</span>
-                            <div class="order-progress"><span></span></div>
-                        </div>
+                    <?php if ($order['payment']): ?>
+                        <p class="payment-status <?= $staffLayout ? 'staff-history-payment' : '' ?>">
+                            Payment: <?= e(ucfirst($order['payment']['payment_method'])) ?> ·
+                            <?= e(ucfirst($order['payment']['payment_status'])) ?>
+                        </p>
+                    <?php endif; ?>
+                    <?php if ($staffLayout): ?>
+                        <form class="history-status-controls" method="post" action="<?= url('staff/orders/status') ?>">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="order_id" value="<?= (int) $order['id'] ?>">
+                            <input type="hidden" name="return_to" value="history">
+                            <label>
+                                <span>Order status</span>
+                                <select name="status">
+                                    <?php foreach (['preparing', 'completed', 'cancelled'] as $status): ?>
+                                        <option value="<?= e($status) ?>" <?= $order['status'] === $status ? 'selected' : '' ?>><?= e(ucfirst($status)) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                            <button class="btn btn-primary" type="submit">Update status</button>
+                        </form>
                     <?php endif; ?>
                     <?php foreach ($order['items'] as $item): ?>
-                        <div class="history-row">
+                        <div class="history-row <?= $staffLayout ? 'staff-history-row' : '' ?>">
                             <div class="thumb-fallback"><i class="fa-solid fa-mug-hot"></i></div>
                             <div class="grow">
                                 <strong><?= e($item['name']) ?></strong>
@@ -34,45 +59,9 @@
                             <strong><?= money((float) $item['price'] * $item['qty']) ?></strong>
                         </div>
                     <?php endforeach; ?>
-                    <footer>Total <?= money((float) $order['total']) ?></footer>
+                    <footer class="<?= $staffLayout ? 'staff-history-total' : '' ?>">Total <?= money((float) $order['total']) ?></footer>
                 </article>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
 </section>
-<?php if ($processingOrderId): ?>
-    <script>
-        const processing = document.querySelector('.order-processing');
-        if (processing) {
-            const countdown = processing.querySelector('.processing-countdown');
-            const progress = processing.querySelector('.order-progress span');
-            const status = processing.closest('.history-order').querySelector('.status');
-            const orderId = processing.dataset.orderId;
-            const csrfToken = <?= json_encode(csrf_token()) ?>;
-            let remaining = 7;
-            requestAnimationFrame(() => { progress.style.width = '100%'; });
-            const timer = setInterval(() => {
-                remaining -= 1;
-                countdown.textContent = remaining;
-                if (remaining <= 0) {
-                    clearInterval(timer);
-                    fetch('<?= e(url('orders/complete')) ?>', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: new URLSearchParams({ order_id: orderId, csrf_token: csrfToken })
-                    }).then((response) => response.json()).then((result) => {
-                        if (result.completed) {
-                            status.textContent = 'completed';
-                            status.classList.remove('status-preparing');
-                            status.classList.add('status-completed');
-                            processing.querySelector('.processing-label').textContent = 'Order completed';
-                            processing.querySelector('.processing-timer').hidden = true;
-                        }
-                    }).catch(() => {
-                        processing.querySelector('.processing-label').textContent = 'Status update failed. Refresh to check.';
-                    });
-                }
-            }, 1000);
-        }
-    </script>
-<?php endif; ?>

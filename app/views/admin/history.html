@@ -1,0 +1,58 @@
+<?php /** @var array $orders */ ?>
+<section class="staff-workspace">
+    <div class="section-head">
+        <div>
+            <h1>Order history</h1>
+            <p class="staff-intro">Recent customer orders with item and payment details.</p>
+        </div>
+    </div>
+    <?php if (!$orders): ?>
+        <div class="empty"><i class="fa-solid fa-clock-rotate-left"></i><p>No orders yet.</p></div>
+    <?php else: ?>
+        <div class="admin-history-list">
+            <?php foreach ($orders as $order): ?>
+                <article class="admin-history-card">
+                    <header class="admin-history-card-head">
+                        <div class="admin-history-order">
+                            <strong>Order #<?= (int) $order['id'] ?></strong>
+                            <span><?= e(date('M j, Y · g:ia', strtotime($order['created_at']))) ?></span>
+                        </div>
+                        <em class="status status-<?= e($order['status']) ?>"><?= e($order['status']) ?></em>
+                    </header>
+                    <div class="admin-history-card-body">
+                        <div class="admin-history-customer">
+                            <strong><?= e($order['customer']) ?></strong>
+                            <span><?= e($order['email']) ?></span>
+                        </div>
+                        <p class="admin-history-items"><?= e($order['items_summary']) ?></p>
+                        <div class="admin-history-payment">
+                            <span class="admin-history-label">Payment</span>
+                            <?php if ($order['payment_status'] !== null): ?>
+                                <strong><?= e(ucfirst(str_replace('_', ' ', $order['payment_method']))) ?></strong>
+                                <span><?= e(ucfirst($order['payment_status'])) ?></span>
+                            <?php else: ?>
+                                <span>Not recorded</span>
+                            <?php endif; ?>
+                        </div>
+                        <strong class="admin-history-total"><?= money((float) $order['total']) ?></strong>
+                    </div>
+                    <form class="history-status-controls" method="post" action="<?= url('staff/orders/status') ?>">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="order_id" value="<?= (int) $order['id'] ?>">
+                        <input type="hidden" name="return_to" value="admin/history">
+                        <label>
+                            <span>Order status</span>
+                            <select name="status">
+                                <?php foreach (['preparing', 'completed', 'cancelled'] as $status): ?>
+                                    <option value="<?= e($status) ?>" <?= $order['status'] === $status ? 'selected' : '' ?>><?= e(ucfirst($status)) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <button class="btn btn-primary" type="submit">Update status</button>
+                    </form>
+                </article>
+            <?php endforeach; ?>
+        </div>
+        <?php if (count($orders) === 500): ?><p class="staff-result-limit">Showing the latest 500 orders.</p><?php endif; ?>
+    <?php endif; ?>
+</section>

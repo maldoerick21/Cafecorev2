@@ -42,8 +42,9 @@ class CartController extends Controller
     {
         $user = require_auth();
         verify_csrf();
-        // Checkout currently supports payment at the counter only.
-        if (($_POST['payment_method'] ?? '') !== 'counter') {
+
+        $paymentMethod = (string) ($_POST['payment_method'] ?? '');
+        if ($paymentMethod !== 'counter') {
             flash('error', 'Please select Pay at the counter.');
             redirect('checkout');
         }
@@ -57,10 +58,10 @@ class CartController extends Controller
             $catalog[$line['key']] = $line;
         }
         try {
-            $orderId = Order::create($user['id'], Cart::items(), $catalog);
+            $orderId = Order::create($user['id'], Cart::items(), $catalog, $paymentMethod);
             Cart::clear();
             flash('success', 'Order #' . $orderId . ' placed. Pay at the counter when you pick it up.');
-            redirect('history?processing=' . $orderId);
+            redirect('history');
         } catch (Throwable $e) {
             flash('error', 'Could not place the order. Try again.');
             redirect('checkout');

@@ -4,7 +4,8 @@ class AuthController extends Controller
     public function login(): void
     {
         if (auth()) {
-            redirect(auth()['role'] === 'admin' ? 'admin' : 'home');
+            $role = auth()['role'] ?? '';
+            redirect($role === 'admin' ? 'admin' : ($role === 'staff' ? 'staff/orders' : 'home'));
         }
         $this->view('auth/login', ['title' => 'Login'], 'auth');
     }
@@ -22,7 +23,7 @@ class AuthController extends Controller
         $_SESSION['user'] = User::toSession($user);
         unset($_SESSION['_old']);
         flash('success', 'Welcome back, ' . $user['name'] . '.');
-        redirect($user['role'] === 'admin' ? 'admin' : 'home');
+        redirect($user['role'] === 'admin' ? 'admin' : ($user['role'] === 'staff' ? 'staff/orders' : 'home'));
     }
     public function signup(): void
     {

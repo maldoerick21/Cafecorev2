@@ -12,9 +12,87 @@ class AdminController extends Controller
             'recent' => Order::allRecent(),
         ], 'admin');
     }
-    public function menu(): void
+    public function history(): void
     {
         require_admin();
+        $this->view('admin/history', [
+            'title' => 'Order history',
+            'orders' => Order::allForAdmin(),
+        ], 'admin');
+    }
+    public function staff(): void
+    {
+        require_admin();
+        $this->view('admin/staff', [
+            'title' => 'Staff accounts',
+            'staffMembers' => User::allStaff(),
+        ], 'admin');
+    }
+    public function createStaff(): void
+    {
+        require_admin();
+        verify_csrf();
+
+        $name = trim(is_string($_POST['name'] ?? null) ? $_POST['name'] : '');
+        $email = trim(is_string($_POST['email'] ?? null) ? $_POST['email'] : '');
+        $password = is_string($_POST['password'] ?? null) ? $_POST['password'] : '';
+        $passwordConfirm = is_string($_POST['password_confirm'] ?? null) ? $_POST['password_confirm'] : '';
+
+        $nameLength = preg_match_all('/./us', $name);
+        if ($name === '' || $nameLength === false || $nameLength > 150 || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 190) {
+            flash('error', 'Enter a name and a valid email address within the allowed length.');
+            redirect('admin/staff');
+        }
+        if (strlen($password) < 8) {
+            flash('error', 'Staff passwords must be at least 8 characters.');
+            redirect('admin/staff');
+        }
+        if ($password !== $passwordConfirm) {
+            flash('error', 'The passwords do not match.');
+            redirect('admin/staff');
+        }
+        if (User::findByEmail($email)) {
+            flash('error', 'An account already exists with that email address.');
+            redirect('admin/staff');
+        }
+
+        try {
+            User::createStaff($name, $email, $password);
+        } catch (PDOException $error) {
+            if ($error->getCode() === '23000') {
+                flash('error', 'An account already exists with that email address.');
+                redirect('admin/staff');
+            }
+            throw $error;
+        }
+        flash('success', 'Staff account created. They can now sign in.');
+        redirect('admin/staff');
+    }
+    public function deleteStaff(): void
+    {
+        require_admin();
+        verify_csrf();
+        $id = filter_var($_POST['staff_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if ($id === false) {
+            flash('error', 'Select a valid staff account.');
+            redirect('admin/staff');
+        }
+
+        $result = User::deleteStaff((int) $id);
+        if ($result === 'has_orders') {
+            flash('error', 'This account has order history and cannot be deleted without removing those records.');
+            redirect('admin/staff');
+        }
+        if ($result !== 'deleted') {
+            flash('error', 'The staff account was not found.');
+            redirect('admin/staff');
+        }
+        flash('success', 'Staff account deleted.');
+        redirect('admin/staff');
+    }
+    public function menu(): void
+    {
+        require_staff();
         $this->view('admin/menu', [
             'title' => 'Menu management',
             'items' => MenuItem::all(),
@@ -22,7 +100,7 @@ class AdminController extends Controller
     }
     public function edit(): void
     {
-        require_admin();
+        require_staff();
         $id = (int) ($_GET['id'] ?? 0);
         $item = $id ? MenuItem::find($id) : null;
         $this->view('admin/edit', [
@@ -33,7 +111,7 @@ class AdminController extends Controller
     }
     public function save(): void
     {
-        require_admin();
+        require_staff();
         verify_csrf();
         $id = (int) ($_POST['id'] ?? 0) ?: null;
         $data = [
@@ -126,14 +204,14 @@ class AdminController extends Controller
     }
     public function toggle(): void
     {
-        require_admin();
+        require_staff();
         verify_csrf();
         MenuItem::toggle((int) ($_POST['id'] ?? 0), $_POST['field'] ?? 'available');
         redirect('admin/menu');
     }
     public function delete(): void
     {
-        require_admin();
+        require_staff();
         verify_csrf();
         MenuItem::delete((int) ($_POST['id'] ?? 0));
         flash('success', 'Item removed from the menu.');

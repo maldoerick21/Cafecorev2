@@ -1,6 +1,5 @@
 <?php /** @var array $profile */ ?>
 <section class="profile-wrap">
-    <a class="btn btn-danger logout-float" href="<?= url('logout') ?>"><i class="fa-solid fa-right-from-bracket"></i> Log out</a>
     <div class="profile-card">
         <div class="avatar">
             <i class="fa-solid fa-user"></i>
@@ -19,16 +18,20 @@
             </label>
             <label class="address-label">
                 Home address
+                <small class="address-help">Tap the location icon to choose an address on the map.</small>
                 <div class="address-input-wrap">
                     <button class="address-map-trigger" id="open-location-picker" type="button" aria-label="Choose home address on map" title="Choose location on map">
                         <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
                     </button>
                     <input id="home-address" type="text" name="address" value="<?= e($profile['address'] ?? '') ?>" placeholder="Choose on map or enter address">
                 </div>
-                <small class="address-help">Tap the location icon to choose an address on the map.</small>
+                
             </label>
             <button class="btn btn-primary" type="submit">Save changes</button>
         </form>
+        <?php if (($profile['role'] ?? '') === 'customer'): ?>
+            <a class="btn btn-danger profile-logout" href="<?= url('logout') ?>"><i class="fa-solid fa-right-from-bracket"></i> Log out</a>
+        <?php endif; ?>
     </div>
 
     <div class="location-modal" id="location-picker-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="location-picker-title">

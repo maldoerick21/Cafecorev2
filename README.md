@@ -22,11 +22,23 @@ Then open http://localhost:8080
 
 The application connects to MySQL, not SQLite. Connection defaults are `127.0.0.1:3306`, database `cafecorev2`, user `root`, and an empty password. Override them with `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` environment variables.
 
+Checkout writes an order, its order items, and a corresponding payment row in one transaction. Counter payments are recorded as `pending`; `payment_date` remains empty until a payment is collected and confirmed.
+
+## Staff workspace
+
+Sign in with an account whose `users.role` is `staff` (administrators can also use the staff workspace). To grant staff access to an existing customer account, run this once in MySQL, replacing the email address:
+
+```sql
+UPDATE users SET role = 'staff' WHERE email = 'staff@example.com';
+```
+
+The staff workspace is available at `/staff/orders`. Staff can create orders for registered customers, search and filter recent orders, update order and payment statuses, and edit menu products. Payment methods are recorded for in-person processing; marking a payment as paid records its payment date. Administrators can create and delete staff accounts at `/admin/staff`; deleting an account with customer order history is blocked so existing orders are preserved. Admins and staff use the same profile editor as customers. The admin order-history page is available at `/admin/history`.
+
 ## Structure
 
 - `index.php` — front controller
 - `app/core` — router, base controller, database
-- `app/controllers` — auth, home, cart, orders, profile, admin
+- `app/controllers` — auth, home, cart, orders, profile, admin, staff
 - `app/models` — User, MenuItem, Order, Cart
 - `app/views` — screens + layouts
 - `public/css` — all the designnof the project

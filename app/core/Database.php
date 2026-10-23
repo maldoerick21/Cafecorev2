@@ -26,6 +26,7 @@ class Database
             ]
         );
         self::ensurePasswordResetTable();
+        self::ensurePaymentsTable();
         return self::$pdo;
     }
 
@@ -40,5 +41,23 @@ class Database
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT fk_password_reset_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    }
+
+    private static function ensurePaymentsTable(): void
+    {
+        self::$pdo->exec("CREATE TABLE IF NOT EXISTS payments (
+            payment_id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            order_id INT UNSIGNED NOT NULL UNIQUE,
+            payment_date DATETIME NULL,
+            amount DECIMAL(10,2) NOT NULL,
+            payment_method VARCHAR(50) NOT NULL,
+            payment_status VARCHAR(30) NOT NULL DEFAULT 'pending',
+            CONSTRAINT fk_payments_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        self::$pdo->exec("INSERT INTO payments (order_id, amount, payment_method, payment_status)
+            SELECT o.id, o.total, 'counter', 'pending'
+            FROM orders o
+            LEFT JOIN payments p ON p.order_id = o.id
+            WHERE p.payment_id IS NULL");
     }
 }

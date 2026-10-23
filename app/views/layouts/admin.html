@@ -10,11 +10,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://kit.fontawesome.com/f43b637ad4.js" crossorigin="anonymous" rel="stylesheet"></script>
     <link rel="stylesheet" href="<?= asset('css/style.css') ?>">
-    <link rel="stylesheet" href="<?= asset('css/admin.css') ?>?v=20261021-pagination">
+    <link rel="stylesheet" href="<?= asset('css/admin.css') ?>?v=20261021-ui-refresh">
+    <?php if (($title ?? '') === 'Profile'): ?>
+        <link rel="stylesheet" href="<?= asset('css/main.css') ?>?v=20261021-ui-refresh">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <?php endif; ?>
 </head>
 <body class="admin-body">
+    <?php
+        $currentUser = auth() ?? [];
+        $isAdminAccount = ($currentUser['role'] ?? '') === 'admin';
+        $menuIsActive = in_array($title ?? '', ['Menu management', 'Edit item', 'New item'], true);
+    ?>
     <aside class="admin-sidebar">
-        <a class="brand brand-compact" href="<?= url('admin') ?>">
+        <a class="brand brand-compact" href="<?= url($isAdminAccount ? 'admin' : 'staff/orders') ?>">
             <i class="fa-solid fa-mug-hot"></i>
         </a>
         <button class="admin-nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav-panel" aria-label="Open admin navigation">
@@ -22,8 +31,15 @@
         </button>
         <div class="admin-nav-panel" id="admin-nav-panel">
             <nav>
-                <a href="<?= url('admin') ?>" class="<?= ($title ?? '') === 'Dashboard' ? 'is-active' : '' ?>" title="Dashboard"><i class="fa-solid fa-chart-pie"></i><span>Dashboard</span></a>
-                <a href="<?= url('admin/menu') ?>" class="<?= in_array($title ?? '', ['Menu management', 'Edit item', 'New item'], true) ? 'is-active' : '' ?>" title="Menu"><i class="fa-solid fa-utensils"></i><span>Menu</span></a>
+                <?php if ($isAdminAccount): ?>
+                    <a href="<?= url('admin') ?>" class="<?= ($title ?? '') === 'Dashboard' ? 'is-active' : '' ?>" title="Dashboard"><i class="fa-solid fa-chart-pie"></i><span>Dashboard</span></a>
+                <?php endif; ?>
+                <a href="<?= url('admin/menu') ?>" class="<?= $menuIsActive ? 'is-active' : '' ?>" title="Menu"><i class="fa-solid fa-utensils"></i><span>Menu</span></a>
+                <a href="<?= url('staff/orders') ?>" class="<?= in_array($title ?? '', ['Staff orders', 'Create customer order'], true) ? 'is-active' : '' ?>" title="Orders"><i class="fa-solid fa-receipt"></i><span>Orders</span></a>
+                <?php if ($isAdminAccount): ?>
+                    <a href="<?= url('admin/history') ?>" class="<?= ($title ?? '') === 'Order history' ? 'is-active' : '' ?>" title="History"><i class="fa-solid fa-clock-rotate-left"></i><span>History</span></a>
+                    <a href="<?= url('admin/staff') ?>" class="<?= ($title ?? '') === 'Staff accounts' ? 'is-active' : '' ?>" title="Staff accounts"><i class="fa-solid fa-users-gear"></i><span>Staff</span></a>
+                <?php endif; ?>
             </nav>
             <a class="sidebar-logout" href="<?= url('logout') ?>" title="Log out"><i class="fa-solid fa-right-from-bracket"></i><span>Log out</span></a>
         </div>
@@ -31,12 +47,11 @@
     <div class="admin-frame">
         <header class="admin-top">
             <strong><?= APP_NAME ?></strong>
-            <?php $currentUser = auth() ?? []; ?>
             <div class="admin-account" aria-label="Signed in account">
                 <i name="user" class="fa-solid fa-user"></i>
-                <span class="admin-account-role"><?= e(ucfirst((string) ($currentUser['role'] ?? 'admin'))) ?></span>
+                <span type="button" onclick="location.href='<?= url('profile') ?>'" class="admin-account-role"><?= e(ucfirst((string) ($currentUser['role'] ?? 'admin'))) ?></span>
                 <span class="admin-account-separator">|</span>
-                <span class="admin-account-name"><?= e($currentUser['name'] ?? 'Admin') ?></span>
+                <a class="admin-account-name" href="<?= url('profile') ?>" title="Profile"><?= e($currentUser['name'] ?? 'Admin') ?></a>
             </div>
         </header>
         <main class="admin-page">
@@ -50,6 +65,10 @@
         </main>
     </div>
     <script src="<?= asset('js/flash.js') ?>"></script>
+    <?php if (($title ?? '') === 'Profile'): ?>
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+        <script src="<?= asset('js/location-picker.js') ?>"></script>
+    <?php endif; ?>
     <script>
         const navToggle = document.querySelector('.admin-nav-toggle');
         const navPanel = document.getElementById('admin-nav-panel');

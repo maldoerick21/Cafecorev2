@@ -3,7 +3,7 @@
     const cards = [...document.querySelectorAll('.item-grid[data-pagination-list="home-menu"] .item-card')];
     const pager = document.querySelector('[data-pagination="home-menu"]');
     if (filters.length && cards.length && pager) {
-        const pageSize = 5;
+        const pageSize = 12;
         let selected = 'all';
         let page = 1;
         const matches = () => cards.filter(card => selected === 'all' || card.dataset.category === selected);
