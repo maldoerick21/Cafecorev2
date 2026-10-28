@@ -15,7 +15,11 @@
                         <img src="<?= e($line['item']['image']) ?>" alt="">
                         <div class="grow">
                             <strong><?= e($line['item']['name']) ?></strong>
-                            <span><?= e($line['size']) ?> · <?= (int) $line['sugar'] ?>% sugar · <?= money((float) $line['price']) ?></span>
+                            <?php $itemOptions = []; ?>
+                            <?php if ($line['has_size']): ?><?php $itemOptions[] = e($line['size']); ?><?php endif; ?>
+                            <?php if ($line['has_sugar']): ?><?php $itemOptions[] = (int) $line['sugar'] . '% sugar'; ?><?php endif; ?>
+                            <?php $itemOptions[] = money((float) $line['price']); ?>
+                            <span><?= implode(' · ', $itemOptions) ?></span>
                         </div>
                         <form method="post" action="<?= url('cart/update') ?>" class="qty-form">
                             <?= csrf_field() ?>
@@ -39,20 +43,36 @@
         <h2>Summary</h2>
         <dl>
             <div><dt>Subtotal</dt><dd><?= money($cart['subtotal']) ?></dd></div>
-            <div><dt>Service</dt><dd><?= money($cart['service']) ?></dd></div>
-            <div class="total"><dt>Total</dt><dd><?= money($cart['total']) ?></dd></div>
+            <div><dt>Delivery fee</dt><dd data-delivery-fee><?= money(0) ?></dd></div>
+            <div class="total"><dt>Total</dt><dd data-checkout-total data-subtotal="<?= e(number_format((float) $cart['subtotal'], 2, '.', '')) ?>"><?= money((float) $cart['subtotal']) ?></dd></div>
         </dl>
         <form method="post" action="<?= url('checkout') ?>" class="checkout-place-form">
             <?= csrf_field() ?>
+            <fieldset class="payment-method fulfillment-method" <?= $cart['lines'] ? '' : 'disabled' ?>>
+                <legend>Order type</legend>
+                <label class="payment-method-option">
+                    <input type="radio" name="fulfillment_type" value="delivery" checked required>
+                    <span class="payment-method-copy"><strong>Delivery</strong><small>10% delivery fee.</small></span>
+                </label>
+                <label class="delivery-address-field" data-delivery-address hidden>
+                    <span>Delivery address</span>
+                    <small class="address-help">Changes here apply to this order only; your saved profile address stays the same.</small>
+                    <div class="address-input-wrap">
+                        <button class="address-map-trigger" id="open-delivery-location-picker" data-open-location-picker type="button" aria-label="Choose delivery address on map" title="Choose delivery address on map">
+                            <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                        </button>
+                        <textarea id="checkout-delivery-address" data-location-picker-input name="delivery_address" rows="3" placeholder="Enter your complete delivery address"><?= e($deliveryAddress) ?></textarea>
+                    </div>
+                </label>
+            </fieldset>
             <fieldset class="payment-method" <?= $cart['lines'] ? '' : 'disabled' ?>>
                 <legend>Payment method</legend>
                 <label class="payment-method-option">
                     <input type="radio" name="payment_method" value="counter" checked required>
-                    <span class="payment-method-icon" aria-hidden="true"><i class="fa-solid fa-cash-register"></i></span>
                     <span class="payment-method-copy">
-                        <strong>Over the counter</strong>
+                        <strong>Cash on delivery (COD)</strong>
+                        <small>Pay in cash when your order arrives.</small>
                     </span>
-                    <i class="fa-solid fa-circle-check payment-method-check" aria-hidden="true"></i>
                 </label>
             </fieldset>
             <button class="btn btn-primary btn-block" type="submit" <?= $cart['lines'] ? '' : 'disabled' ?>>
@@ -61,3 +81,49 @@
         </form>
     </aside>
 </section>
+<script>
+    (() => {
+        const methods = document.querySelectorAll('input[name="payment_method"]');
+        const fulfillmentMethods = document.querySelectorAll('input[name="fulfillment_type"]');
+        const addressField = document.querySelector('[data-delivery-address]');
+        const addressInput = addressField?.querySelector('textarea');
+        const fee = document.querySelector('[data-delivery-fee]');
+        const total = document.querySelector('[data-checkout-total]');
+        if (!methods.length || !fee || !total) return;
+        const formatMoney = (amount) => '₱' + amount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const updateTotal = () => {
+            const delivery = document.querySelector('input[name="fulfillment_type"]:checked')?.value === 'delivery';
+            const subtotal = Number(total.dataset.subtotal || 0);
+            const charge = delivery ? Math.round(subtotal * 0.10 * 100) / 100 : 0;
+            fee.textContent = formatMoney(charge);
+            total.textContent = formatMoney(subtotal + charge);
+            if (addressField && addressInput) {
+                addressField.hidden = !delivery;
+                addressInput.required = Boolean(delivery);
+            }
+        };
+        methods.forEach((method) => method.addEventListener('change', updateTotal));
+        fulfillmentMethods.forEach((method) => method.addEventListener('change', updateTotal));
+        updateTotal();
+    })();
+</script>
+<div class="location-modal" id="location-picker-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="location-picker-title">
+    <div class="location-modal-backdrop" data-close-map></div>
+    <div class="location-modal-panel">
+        <div class="location-modal-header">
+            <div>
+                <h2 id="location-picker-title">Choose your location</h2>
+                <p>Use your current location or click or tap the map to place the pin.</p>
+            </div>
+            <button class="location-modal-close" type="button" data-close-map aria-label="Close map"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="address-map" class="address-map" aria-label="Interactive OpenStreetMap location picker"></div>
+        <p class="map-selection-status" id="map-selection-status" aria-live="polite">Choose a location on the map or use your current location.</p>
+        <div class="location-modal-actions">
+            <button class="btn btn-outline" type="button" id="use-current-location"><i class="fa-solid fa-location-crosshairs" aria-hidden="true"></i> Use my current location</button>
+            <button class="btn btn-outline" type="button" data-close-map>Cancel</button>
+            <button class="btn btn-primary" type="button" id="use-selected-location" disabled>Use this location</button>
+        </div>
+        <p class="map-attribution-note">Map data © OpenStreetMap contributors</p>
+    </div>
+</div>

@@ -45,7 +45,7 @@
                         <form method="post" action="<?= url('cart/add') ?>">
                             <?= csrf_field() ?>
                             <input type="hidden" name="item_id" value="<?= (int) $item['id'] ?>">
-                            <a class="icon-btn" href="<?= url('menu/item?id=' . (int) $item['id']) ?>" title="Customize item"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                            <a class="menu-order-link" href="<?= url('menu/item?id=' . (int) $item['id']) ?>"><i class="fa-solid fa-arrow-up-right-from-square"></i><span><?= auth() ? 'Order' : 'Sign in to order' ?></span></a>
                         </form>
                     </div>
                 </div>

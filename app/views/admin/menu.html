@@ -1,5 +1,8 @@
-<?php /** @var array $items */ ?>
-<section>
+<?php
+/** @var array $items */
+$archived = $archived ?? false; 
+?>
+<section class="menu-management">
     <div class="section-head">
         <h1>Menu management</h1>
         <a class="btn btn-primary" href="<?= url('admin/menu/create') ?>"><i class="fa-solid fa-plus"></i> Add item</a>
@@ -20,34 +23,52 @@
             <button type="button" class="menu-category-filter" data-category-filter="<?= e($categoryName) ?>" aria-pressed="false"><?= e($categoryName) ?></button>
         <?php endforeach; ?>
     </nav>
+    <div class="archive-toolbar menu-archive-toolbar">
+        <nav class="archive-views" aria-label="Menu archive views">
+            <a href="<?= url('admin/menu') ?>" class="<?= !$archived ? 'is-active' : '' ?>">Current menu</a>
+            <a href="<?= url('admin/menu?archived=1') ?>" class="<?= $archived ? 'is-active' : '' ?>">Archived</a>
+        </nav>
+        <?php if ($items): ?>
+            <form id="bulk-archive-menu" class="bulk-archive-form" method="post" action="<?= url('admin/menu/archive') ?>" data-bulk-archive onsubmit="return confirm('<?= $archived ? 'Restore' : 'Archive' ?> the selected menu items?')">
+                <?= csrf_field() ?>
+                <input type="hidden" name="operation" value="<?= $archived ? 'restore' : 'archive' ?>">
+                <label class="archive-select-all"><input type="checkbox" data-archive-select-all="bulk-archive-menu"> Select all items</label>
+                <button class="btn btn-primary" type="submit" disabled><i class="fa-solid <?= $archived ? 'fa-box-open' : 'fa-box-archive' ?>"></i> <?= $archived ? 'Restore selected' : 'Archive selected' ?></button>
+                <span data-archive-selection-count>0 selected</span>
+            </form>
+        <?php endif; ?>
+    </div>
     <div class="menu-admin-list" data-pagination-list="admin-menu">
         <?php foreach ($items as $item): ?>
             <article class="edit-item-row" data-menu-category="<?= e(trim((string) ($item['category'] ?? ''))) ?>">
-                <img src="<?= e($item['image']) ?>" alt="">
-                <div class="grow">
-                    <strong><?= e($item['name']) ?></strong>
-                    <span><?= e($item['category']) ?> - <?= money((float) $item['price']) ?></span>
+                <label class="archive-row-select"><input type="checkbox" data-archive-item form="bulk-archive-menu" name="ids[]" value="<?= (int) $item['id'] ?>"><span class="sr-only">Select <?= e($item['name']) ?></span></label>
+                <div class="edit-item-identity">
+                    <img src="<?= e($item['image']) ?>" alt="">
+                    <div class="grow">
+                        <strong><?= e($item['name']) ?></strong>
+                        <span><?= e($item['category']) ?> - <?= money((float) $item['price']) ?></span>
+                    </div>
                 </div>
-                <form method="post" action="<?= url('admin/menu/toggle') ?>">
-                    <?= csrf_field() ?>
-                    <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
-                    <input type="hidden" name="field" value="available">
-                    <label class="switch">
-                        <input type="checkbox" <?= $item['available'] ? 'checked' : '' ?> onchange="this.form.submit()">
-                        <span></span>
-                    </label>
-                </form>
-                <a class="icon-btn" href="<?= url('admin/menu/edit?id=' . (int) $item['id']) ?>"><i class="fa-solid fa-pen"></i></a>
-                <form method="post" action="<?= url('admin/menu/delete') ?>" onsubmit="return confirm('Remove this item?')">
-                    <?= csrf_field() ?>
-                    <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
-                    <!-- <button class="icon-btn" type="submit" aria-label="Remove <?= e($item['name']) ?>"><i class="fa-solid fa-trash"></i></button> -->
-                </form>
+                <?php if (!$archived): ?>
+                    <form method="post" action="<?= url('admin/menu/toggle') ?>">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
+                        <input type="hidden" name="field" value="available">
+                        <label class="switch">
+                            <input type="checkbox" <?= $item['available'] ? 'checked' : '' ?> onchange="this.form.submit()">
+                            <span></span>
+                        </label>
+                    </form>
+                    <a class="icon-btn" href="<?= url('admin/menu/edit?id=' . (int) $item['id']) ?>"><i class="fa-solid fa-pen"></i></a>
+                <?php else: ?>
+                    <span class="archive-status">Archived</span>
+                <?php endif; ?>
             </article>
         <?php endforeach; ?>
     </div>
     <div class="pagination" data-pagination="admin-menu" aria-label="Menu pages"></div>
 </section>
+<script src="<?= asset('js/bulk-archive.js') ?>?v=1"></script>
 <script>
 (() => {
     const filters = [...document.querySelectorAll('[data-category-filter]')];
@@ -75,7 +96,9 @@
             pager.append(button);
         };
         addButton('‹', page - 1, page === 1);
-        for (let n = 1; n <= pageCount; n++) addButton(String(n), n, false, n === page);
+        const firstPage = Math.min(Math.max(1, page), Math.max(1, pageCount - 2));
+        const lastPage = Math.min(pageCount, firstPage + 2);
+        for (let n = firstPage; n <= lastPage; n++) addButton(String(n), n, false, n === page);
         addButton('›', page + 1, page === pageCount);
     }
     filters.forEach(button => button.addEventListener('click', () => {

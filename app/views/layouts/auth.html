@@ -8,15 +8,17 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://kit.fontawesome.com/f43b637ad4.js" crossorigin="anonymous" rel="stylesheet"></script>
+    <link rel="stylesheet" href="<?= asset('vendor/fontawesome/css/fontawesome.min.css') ?>">
+    <link rel="stylesheet" href="<?= asset('vendor/fontawesome/css/solid.min.css') ?>">
+    <link rel="stylesheet" href="<?= asset('vendor/fontawesome/css/regular.min.css') ?>">
     <link rel="stylesheet" href="<?= asset('css/style.css') ?>">
-    <link rel="stylesheet" href="<?= asset('css/auth.css') ?>?v=20261021-ui-refresh">
+    <link rel="stylesheet" href="<?= asset('css/auth.css') ?>?v=20261024-auth-logo">
 </head>
 <body class="auth-body">
     <div class="auth-shell">
         <aside class="auth-visual">
             <div class="auth-visual-inner">
-                <span class="brand-mark"><i class="fa-solid fa-mug-hot"></i> <?= APP_NAME ?></span>
+                <span class="brand-mark"><img src="<?= asset('images/cafecore-mark.svg') ?>" alt="CaféCore logo"> <span><?= APP_NAME ?></span></span>
                 <h2>Slow mornings.<br>Serious coffee.</h2>
                 <p>House-roasted beans, laminated pastry, and a quiet counter in the middle of the city.</p>
             </div>

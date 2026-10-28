@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2850" height="1380" viewBox="0 0 2850 1380">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#52738e"/></marker></defs>
+<rect width="2850" height="1380" fill="#f6f8fa"/>
+<text x="70" y="72" font-family="Arial, sans-serif" font-size="54" font-weight="700" fill="#17324d">CaféCore project entity relationship diagram</text>
+<text x="72" y="128" font-family="Arial, sans-serif" font-size="27" font-weight="400" fill="#50687b">MySQL database: cafecorev2     PK primary key   ·   FK foreign key   ·   UQ unique</text>
+<path d="M370 190 V145 H1810 V190" fill="none" stroke="#52738e" stroke-width="6" marker-end="url(#arrow)"/>
+<path d="M370 640 V760" fill="none" stroke="#52738e" stroke-width="6" marker-end="url(#arrow)"/>
+<path d="M1070 500 V760" fill="none" stroke="#52738e" stroke-width="6" marker-end="url(#arrow)"/>
+<path d="M1810 630 V760" fill="none" stroke="#52738e" stroke-width="6" marker-end="url(#arrow)"/>
+<path d="M1370 970 H1510" fill="none" stroke="#52738e" stroke-width="6" marker-end="url(#arrow)"/>
+<path d="M2110 380 H2220" fill="none" stroke="#52738e" stroke-width="6" marker-end="url(#arrow)"/>
+<rect x="70" y="190" width="600" height="450" rx="20" fill="#ffffff" stroke="#52738e" stroke-width="4"/>
+<path d="M90 190 H650 Q670 190 670 210 V260 H70 V210 Q70 190 90 190Z" fill="#17324d"/>
+<text x="94" y="238" font-family="Arial, sans-serif" font-size="36" font-weight="700" fill="#ffffff">users</text>
+<text x="96" y="306" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">PK  id</text>
+<text x="96" y="345" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">name</text>
+<text x="96" y="384" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">email (unique)</text>
+<text x="96" y="423" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">password</text>
+<text x="96" y="462" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">role</text>
+<text x="96" y="501" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">phone</text>
+<text x="96" y="540" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">address</text>
+<text x="96" y="579" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">created_at</text>
+<text x="96" y="618" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">archived_at</text>
+<rect x="770" y="190" width="600" height="310" rx="20" fill="#ffffff" stroke="#52738e" stroke-width="4"/>
+<path d="M790 190 H1350 Q1370 190 1370 210 V260 H770 V210 Q770 190 790 190Z" fill="#17324d"/>
+<text x="794" y="238" font-family="Arial, sans-serif" font-size="36" font-weight="700" fill="#ffffff">categories</text>
+<text x="796" y="306" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">PK  category_id</text>
+<text x="796" y="345" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">category_name (unique)</text>
+<rect x="1510" y="190" width="600" height="440" rx="20" fill="#ffffff" stroke="#52738e" stroke-width="4"/>
+<path d="M1530 190 H2090 Q2110 190 2110 210 V260 H1510 V210 Q1510 190 1530 190Z" fill="#17324d"/>
+<text x="1534" y="238" font-family="Arial, sans-serif" font-size="36" font-weight="700" fill="#ffffff">orders</text>
+<text x="1536" y="306" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">PK  id</text>
+<text x="1536" y="345" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">FK  user_id</text>
+<text x="1536" y="384" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">total</text>
+<text x="1536" y="423" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">status</text>
+<text x="1536" y="462" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">fulfillment_type</text>
+<text x="1536" y="501" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">delivery_address</text>
+<text x="1536" y="540" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">created_at</text>
+<text x="1536" y="579" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">archived_at</text>
+<rect x="2220" y="190" width="570" height="420" rx="20" fill="#ffffff" stroke="#52738e" stroke-width="4"/>
+<path d="M2240 190 H2770 Q2790 190 2790 210 V260 H2220 V210 Q2220 190 2240 190Z" fill="#17324d"/>
+<text x="2244" y="238" font-family="Arial, sans-serif" font-size="36" font-weight="700" fill="#ffffff">payments</text>
+<text x="2246" y="306" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">PK  payment_id</text>
+<text x="2246" y="345" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">FK / UQ  order_id</text>
+<text x="2246" y="384" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">payment_date</text>
+<text x="2246" y="423" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">amount</text>
+<text x="2246" y="462" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">payment_method</text>
+<text x="2246" y="501" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">payment_status</text>
+<rect x="70" y="760" width="600" height="390" rx="20" fill="#ffffff" stroke="#52738e" stroke-width="4"/>
+<path d="M90 760 H650 Q670 760 670 780 V830 H70 V780 Q70 760 90 760Z" fill="#17324d"/>
+<text x="94" y="808" font-family="Arial, sans-serif" font-size="36" font-weight="700" fill="#ffffff">password_reset_tokens</text>
+<text x="96" y="876" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">PK  id</text>
+<text x="96" y="915" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">FK  user_id</text>
+<text x="96" y="954" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">otp_hash</text>
+<text x="96" y="993" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">expires_at</text>
+<text x="96" y="1032" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">attempts</text>
+<text x="96" y="1071" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">created_at</text>
+<rect x="770" y="760" width="600" height="480" rx="20" fill="#ffffff" stroke="#52738e" stroke-width="4"/>
+<path d="M790 760 H1350 Q1370 760 1370 780 V830 H770 V780 Q770 760 790 760Z" fill="#17324d"/>
+<text x="794" y="808" font-family="Arial, sans-serif" font-size="36" font-weight="700" fill="#ffffff">menu_items</text>
+<text x="796" y="876" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">PK  id</text>
+<text x="796" y="915" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">FK  category_id</text>
+<text x="796" y="954" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">name</text>
+<text x="796" y="993" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">description</text>
+<text x="796" y="1032" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">price</text>
+<text x="796" y="1071" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">image</text>
+<text x="796" y="1110" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">available</text>
+<text x="796" y="1149" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">featured</text>
+<text x="796" y="1188" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">created_at</text>
+<text x="796" y="1227" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">archived_at</text>
+<rect x="1510" y="760" width="600" height="390" rx="20" fill="#ffffff" stroke="#52738e" stroke-width="4"/>
+<path d="M1530 760 H2090 Q2110 760 2110 780 V830 H1510 V780 Q1510 760 1530 760Z" fill="#17324d"/>
+<text x="1534" y="808" font-family="Arial, sans-serif" font-size="36" font-weight="700" fill="#ffffff">order_items</text>
+<text x="1536" y="876" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">PK  id</text>
+<text x="1536" y="915" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">FK  order_id</text>
+<text x="1536" y="954" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">FK  menu_item_id (nullable)</text>
+<text x="1536" y="993" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">name</text>
+<text x="1536" y="1032" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">qty</text>
+<text x="1536" y="1071" font-family="Arial, sans-serif" font-size="31" font-weight="400" fill="#243746">price</text>
+<rect x="1050" y="145" width="170" height="36" rx="12" fill="#ffffff"/>
+<text x="1060" y="175" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#17324d">1 : many</text>
+<rect x="390" y="675" width="160" height="42" rx="12" fill="#ffffff"/>
+<text x="400" y="705" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#17324d">1 : many</text>
+<rect x="1090" y="615" width="160" height="42" rx="12" fill="#ffffff"/>
+<text x="1100" y="645" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#17324d">1 : many</text>
+<rect x="1830" y="665" width="160" height="42" rx="12" fill="#ffffff"/>
+<text x="1840" y="695" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#17324d">1 : many</text>
+<rect x="1378" y="912" width="124" height="42" rx="12" fill="#ffffff"/>
+<text x="1388" y="942" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#17324d">1 : 0..many</text>
+<rect x="2112" y="325" width="106" height="42" rx="12" fill="#ffffff"/>
+<text x="2122" y="355" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#17324d">1 : 0..1</text>
+<text x="72" y="1335" font-family="Arial, sans-serif" font-size="23" font-weight="400" fill="#50687b">Orders may have zero or one payment row. Each order item keeps its saved name and price; menu_item_id may be NULL if the menu item is deleted.</text>
+</svg>

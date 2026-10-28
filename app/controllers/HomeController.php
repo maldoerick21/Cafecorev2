@@ -14,19 +14,19 @@ class HomeController extends Controller
         $this->view('home/detail', [
             'title' => $item['name'],
             'item' => $item,
+            'customization' => MenuItem::customizationOptions((string) $item['category']),
             'cartCount' => Cart::count(),
         ]);
     }
 
     public function index(): void
     {
-        require_auth();
         $this->view('home/index', [
             'title' => 'Home',
             'featured' => MenuItem::featured(),
             'items' => MenuItem::all(null, true),
             'categories' => MenuItem::categories(),
-            'cartCount' => Cart::count(),
+            'cartCount' => auth() ? Cart::count() : 0,
         ]);
     }
 }

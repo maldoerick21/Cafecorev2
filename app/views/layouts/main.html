@@ -11,36 +11,52 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://kit.fontawesome.com/f43b637ad4.js" crossorigin="anonymous" rel="stylesheet"></script>
+    <link rel="stylesheet" href="<?= asset('vendor/fontawesome/css/fontawesome.min.css') ?>">
+    <link rel="stylesheet" href="<?= asset('vendor/fontawesome/css/solid.min.css') ?>">
+    <link rel="stylesheet" href="<?= asset('vendor/fontawesome/css/regular.min.css') ?>">
     <link rel="stylesheet" href="<?= asset('css/style.css') ?>">
-    <link rel="stylesheet" href="<?= asset('css/main.css') ?>?v=20261021-ui-refresh">
-    <?php if (($title ?? '') === 'Profile'): ?>
+    <link rel="stylesheet" href="<?= asset('css/main.css') ?>?v=20261028-checkout-location">
+    <?php if (in_array(($title ?? ''), ['Profile', 'Checkout'], true)): ?>
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
     <?php endif; ?>
 </head>
 <body class="app-body">
     <header class="navbar">
         <a class="brand" href="<?= url('home') ?>">
-            <i class="fa-solid fa-mug-hot"></i>
+            <img src="<?= asset('images/cafecore-mark.svg') ?>" alt="">
             <span><?= APP_NAME ?></span>
         </a>
-        <nav class="nav-actions">
-            <a href="<?= url('home') ?>" class="<?= ($title ?? '') === 'Home' ? 'is-active' : '' ?>" title="Home"><i class="fa-solid fa-house"></i></a>
-            <a href="<?= url('history') ?>" class="<?= ($title ?? '') === 'History' ? 'is-active' : '' ?>" title="History"><i class="fa-solid fa-clock-rotate-left"></i></a>
-            <a href="<?= url('checkout') ?>" class="nav-cart <?= ($title ?? '') === 'Checkout' ? 'is-active' : '' ?>" title="Checkout">
-                <i class="fa-solid fa-bag-shopping"></i>
-                <?php if (($cartCount ?? 0) > 0): ?><span class="badge"><?= (int) $cartCount ?></span><?php endif; ?>
-            </a>
-        </nav>
-        <?php $currentUser = auth() ?? []; ?>
-        <a class="account-chip" href="<?= url('profile') ?>" title="Profile">
-            <i class="fa-solid fa-user"></i>
-            <span class="account-details">
-                <span class="account-role"><?= e(ucfirst((string) ($currentUser['role'] ?? 'customer'))) ?></span>
-                <span class="account-separator">|</span>
-                <span class="account-name"><?= e($currentUser['name'] ?? 'Customer') ?></span>
-            </span>
-        </a>
+        <?php if (auth()): ?>
+            <nav class="nav-actions">
+                <a href="<?= url('home') ?>" class="<?= ($title ?? '') === 'Home' ? 'is-active' : '' ?>" title="Home"><i class="fa-solid fa-house"></i></a>
+                <a href="<?= url('history') ?>" class="<?= ($title ?? '') === 'History' ? 'is-active' : '' ?>" title="History"><i class="fa-solid fa-clock-rotate-left"></i></a>
+                <a href="<?= url('checkout') ?>" class="nav-cart <?= ($title ?? '') === 'Checkout' ? 'is-active' : '' ?>" title="Checkout">
+                    <i class="fa-solid fa-bag-shopping"></i>
+                    <?php if (($cartCount ?? 0) > 0): ?><span class="badge"><?= (int) $cartCount ?></span><?php endif; ?>
+                </a>
+            </nav>
+            <?php $currentUser = auth(); ?>
+            <details class="account-menu">
+                <summary class="account-chip" aria-label="Open account menu">
+                    <i class="fa-solid fa-user"></i>
+                    <span class="account-details">
+                        <span class="account-role"><?= e(ucfirst((string) ($currentUser['role'] ?? 'customer'))) ?></span>
+                        <span class="account-separator">|</span>
+                        <span class="account-name"><?= e($currentUser['name'] ?? 'Customer') ?></span>
+                    </span>
+                    <i class="fa-solid fa-chevron-down account-chevron" aria-hidden="true"></i>
+                </summary>
+                <nav class="account-dropdown" aria-label="Account options">
+                    <a href="<?= url('profile') ?>"><i class="fa-regular fa-id-card"></i> Personal info</a>
+                    <a href="<?= url('logout') ?>"><i class="fa-solid fa-arrow-right-from-bracket"></i> Log out</a>
+                </nav>
+            </details>
+        <?php else: ?>
+            <nav class="guest-actions" aria-label="Account">
+                <a href="<?= url('login') ?>">Log in</a>
+                <a class="guest-signup" href="<?= url('signup') ?>">Create account</a>
+            </nav>
+        <?php endif; ?>
     </header>
     <main class="page">
         <?php if ($msg = flash('error')): ?>
@@ -53,9 +69,9 @@
     </main>
     <script src="<?= asset('js/app.js') ?>?v=<?= (int) filemtime(PUBLIC_PATH . '/js/app.js') ?>"></script>
     <script src="<?= asset('js/flash.js') ?>"></script>
-    <?php if (($title ?? '') === 'Profile'): ?>
+    <?php if (in_array(($title ?? ''), ['Profile', 'Checkout'], true)): ?>
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-        <script src="<?= asset('js/location-picker.js') ?>"></script>
+        <script src="<?= asset('js/location-picker.js') ?>?v=20261028-checkout-location"></script>
     <?php endif; ?>
 </body>
 </html>

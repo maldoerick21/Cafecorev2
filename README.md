@@ -34,6 +34,10 @@ UPDATE users SET role = 'staff' WHERE email = 'staff@example.com';
 
 The staff workspace is available at `/staff/orders`. Staff can create orders for registered customers, search and filter recent orders, update order and payment statuses, and edit menu products. Payment methods are recorded for in-person processing; marking a payment as paid records its payment date. Administrators can create and delete staff accounts at `/admin/staff`; deleting an account with customer order history is blocked so existing orders are preserved. Admins and staff use the same profile editor as customers. The admin order-history page is available at `/admin/history`.
 
+## Reports and Excel export
+
+Admins and staff can open `/reports` to review orders by date range, order status, and payment status. The report includes daily sales totals and matching order details. Use **Export to Excel** to download an `.xlsx` workbook with an overview sheet and a filterable order-details sheet.
+
 ## Structure
 
 - `index.php` — front controller

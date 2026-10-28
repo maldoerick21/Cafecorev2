@@ -16,14 +16,18 @@ class AuthController extends Controller
         $password = $_POST['password'] ?? '';
         $_SESSION['_old'] = ['email' => $email];
         $user = User::findByEmail($email);
-        if (!$user || !password_verify($password, $user['password'])) {
+        if (!$user || !empty($user['archived_at']) || !password_verify($password, $user['password'])) {
             flash('error', 'Those credentials do not match our records.');
             redirect('login');
         }
         $_SESSION['user'] = User::toSession($user);
         unset($_SESSION['_old']);
         flash('success', 'Welcome back, ' . $user['name'] . '.');
-        redirect($user['role'] === 'admin' ? 'admin' : ($user['role'] === 'staff' ? 'staff/orders' : 'home'));
+        $destination = $user['role'] === 'admin'
+            ? 'admin'
+            : ($user['role'] === 'staff' ? 'staff/orders' : ($_SESSION['_after_login'] ?? 'home'));
+        unset($_SESSION['_after_login']);
+        redirect($destination);
     }
     public function signup(): void
     {
@@ -60,12 +64,10 @@ class AuthController extends Controller
             flash('error', 'That email is already registered.');
             redirect('signup');
         }
-        $id = User::create(compact('name', 'email', 'password'));
-        $user = User::find($id);
-        $_SESSION['user'] = User::toSession($user);
+        User::create(compact('name', 'email', 'password'));
         unset($_SESSION['_old']);
-        flash('success', 'Account created. Your table is ready.');
-        redirect('home');
+        flash('success', 'Account created. Please log in with your new account.');
+        redirect('login');
     }
     public function forgot(): void
     {
@@ -177,6 +179,6 @@ class AuthController extends Controller
         session_destroy();
         session_start();
         flash('success', 'You have been signed out.');
-        redirect('login');
+        redirect('home');
     }
 }

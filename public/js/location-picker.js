@@ -1,11 +1,12 @@
 (() => {
-    const openButton = document.getElementById('open-location-picker');
+    const openButton = document.querySelector('[data-open-location-picker]');
     const modal = document.getElementById('location-picker-modal');
-    const addressInput = document.getElementById('home-address');
+    const addressInput = document.querySelector('[data-location-picker-input]');
     const status = document.getElementById('map-selection-status');
     const useButton = document.getElementById('use-selected-location');
+    const currentLocationButton = document.getElementById('use-current-location');
     const mapElement = document.getElementById('address-map');
-    if (!openButton || !modal || !addressInput || !mapElement || typeof L === 'undefined') return;
+    if (!openButton || !modal || !addressInput || !status || !useButton || !currentLocationButton || !mapElement || typeof L === 'undefined') return;
 
     let map = null;
     let marker = null;
@@ -39,6 +40,30 @@
         reverseGeocode(latlng);
     };
 
+    const locateCurrentPosition = () => {
+        if (!navigator.geolocation) {
+            setStatus('Current location is unavailable in this browser. You can still place the pin on the map.');
+            return;
+        }
+        currentLocationButton.disabled = true;
+        setStatus('Finding your current location…');
+        navigator.geolocation.getCurrentPosition((position) => {
+            if (!map) return;
+            const latlng = L.latLng(position.coords.latitude, position.coords.longitude);
+            map.setView(latlng, 17);
+            currentLocationButton.disabled = false;
+            selectPoint(latlng);
+        }, (error) => {
+            const messages = {
+                1: 'Location permission was denied. Allow location access in your browser settings and try again.',
+                2: 'Your current location is unavailable. Check your device location settings and try again.',
+                3: 'Finding your location timed out. Please try again.'
+            };
+            setStatus(messages[error.code] || 'Could not find your current location. Please try again.');
+            currentLocationButton.disabled = false;
+        }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
+    };
+
     const initMap = () => {
         if (map) {
             map.invalidateSize();
@@ -61,8 +86,10 @@
         if (navigator.geolocation && !selectedLatLng && !addressInput.value.trim()) {
             navigator.geolocation.getCurrentPosition((position) => {
                 if (!map || selectedLatLng) return;
-                map.setView([position.coords.latitude, position.coords.longitude], 16);
-            }, () => {}, { timeout: 4000, maximumAge: 60000 });
+                const latlng = L.latLng(position.coords.latitude, position.coords.longitude);
+                map.setView(latlng, 17);
+                selectPoint(latlng);
+            }, () => {}, { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
         }
     });
 
@@ -72,6 +99,7 @@
         document.body.classList.remove('map-open');
     };
     modal.querySelectorAll('[data-close-map]').forEach((button) => button.addEventListener('click', closeModal));
+    currentLocationButton.addEventListener('click', locateCurrentPosition);
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' && modal.classList.contains('is-open')) closeModal();
     });

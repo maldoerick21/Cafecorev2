@@ -1,17 +1,18 @@
-<?php /** @var array $staffMembers */ ?>
+<?php
+/** @var array $staffMembers */
+$archived = $archived ?? false; 
+?>
 <section class="staff-management">
     <div class="section-head">
         <div>
             <h1>Staff accounts</h1>
-            <p class="staff-intro">Create staff sign-ins and remove accounts when staff leave.</p>
         </div>
     </div>
 
-    <form method="post" action="<?= url('admin/staff/create') ?>" class="staff-account-form">
+    <?php if (!$archived): ?><form method="post" action="<?= url('admin/staff/create') ?>" class="staff-account-form">
         <?= csrf_field() ?>
         <div>
             <h2>Create staff account</h2>
-            <p>Share the sign-in email and password securely with the new staff member.</p>
         </div>
         <label>
             Full name
@@ -32,18 +33,41 @@
             </label>
         </div>
         <button class="btn btn-primary" type="submit"><i class="fa-solid fa-user-plus"></i> Create account</button>
-    </form>
+    </form><?php endif; ?>
 
     <div class="staff-account-list">
         <div class="staff-account-list-heading">
-            <h2>Current staff</h2>
-            <span><?= count($staffMembers) ?> account<?= count($staffMembers) === 1 ? '' : 's' ?></span>
+            <h2><?= $archived ? 'Archived staff' : 'Current staff' ?></h2>
+            <span data-staff-account-count><?= count($staffMembers) ?> account<?= count($staffMembers) === 1 ? '' : 's' ?></span>
+        </div>
+        <label class="staff-account-search">
+            <span class="sr-only">Search staff by name or email</span>
+            <span class="staff-account-search-field">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input type="search" data-staff-account-search placeholder="Search staff by name or email">
+            </span>
+        </label>
+        <div class="archive-toolbar">
+            <nav class="archive-views" aria-label="Staff archive views">
+                <a href="<?= url('admin/staff') ?>" class="<?= !$archived ? 'is-active' : '' ?>">Current staff</a>
+                <a href="<?= url('admin/staff?archived=1') ?>" class="<?= $archived ? 'is-active' : '' ?>">Archived</a>
+            </nav>
+            <?php if ($staffMembers): ?>
+                <form id="bulk-archive-staff" class="bulk-archive-form" method="post" action="<?= url('admin/staff/archive') ?>" data-bulk-archive onsubmit="return confirm('<?= $archived ? 'Restore' : 'Archive' ?> the selected staff accounts?')">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="operation" value="<?= $archived ? 'restore' : 'archive' ?>">
+                    <label class="archive-select-all"><input type="checkbox" data-archive-select-all="bulk-archive-staff"> Select all staff</label>
+                    <button class="btn btn-primary" type="submit" disabled><i class="fa-solid <?= $archived ? 'fa-box-open' : 'fa-box-archive' ?>"></i> <?= $archived ? 'Restore selected' : 'Archive selected' ?></button>
+                    <span data-archive-selection-count>0 selected</span>
+                </form>
+            <?php endif; ?>
         </div>
         <?php if (!$staffMembers): ?>
             <div class="empty"><i class="fa-solid fa-users"></i><p>No staff accounts yet.</p></div>
         <?php else: ?>
             <?php foreach ($staffMembers as $staff): ?>
-                <article class="staff-account-card">
+                <article class="staff-account-card" data-staff-account-card data-search-text="<?= e($staff['name'] . ' ' . $staff['email']) ?>">
+                    <label class="archive-row-select"><input type="checkbox" data-archive-item form="bulk-archive-staff" name="ids[]" value="<?= (int) $staff['id'] ?>"><span class="sr-only">Select <?= e($staff['name']) ?></span></label>
                     <div class="staff-account-person">
                         <span class="staff-account-avatar" aria-hidden="true"><i class="fa-solid fa-user"></i></span>
                         <div>
@@ -52,14 +76,62 @@
                         </div>
                     </div>
                     <span class="staff-account-created">Added <?= e(date('M j, Y', strtotime($staff['created_at']))) ?></span>
-                    <form method="post" action="<?= url('admin/staff/delete') ?>" onsubmit="return confirm('Delete this staff account? They will no longer be able to sign in.')">
+                    <?php if (!$archived): ?><form method="post" action="<?= url('admin/staff/delete') ?>" onsubmit="return confirm('Delete this staff account? They will no longer be able to sign in.')">
                         <?= csrf_field() ?>
                         <input type="hidden" name="staff_id" value="<?= (int) $staff['id'] ?>">
                         <button class="btn btn-delete-staff" type="submit"><i class="fa-solid fa-trash"></i> Delete</button>
-                    </form>
+                    </form><?php else: ?><span class="archive-status">Archived</span><?php endif; ?>
                 </article>
             <?php endforeach; ?>
+            <p class="staff-account-no-results" data-staff-account-no-results hidden>No staff accounts match your search.</p>
+            <div class="pagination" data-staff-account-pagination aria-label="Staff account pages"></div>
         <?php endif; ?>
-        <p class="staff-account-note">Accounts with customer order history cannot be deleted, to preserve those records.</p>
     </div>
 </section>
+<script src="<?= asset('js/bulk-archive.js') ?>?v=1"></script>
+<script>
+(() => {
+    const search = document.querySelector('[data-staff-account-search]');
+    const cards = [...document.querySelectorAll('[data-staff-account-card]')];
+    const pager = document.querySelector('[data-staff-account-pagination]');
+    const count = document.querySelector('[data-staff-account-count]');
+    const noResults = document.querySelector('[data-staff-account-no-results]');
+    if (!search || !pager) return;
+    const pageSize = 5;
+    let page = 1;
+
+    function render() {
+        const query = search.value.trim().toLowerCase();
+        const matchingCards = cards.filter(card => card.dataset.searchText.toLocaleLowerCase().includes(query));
+        const pageCount = Math.max(1, Math.ceil(matchingCards.length / pageSize));
+        page = Math.min(page, pageCount);
+        cards.forEach(card => { card.hidden = true; });
+        matchingCards.slice((page - 1) * pageSize, page * pageSize).forEach(card => { card.hidden = false; });
+        if (count) count.textContent = `${matchingCards.length} account${matchingCards.length === 1 ? '' : 's'}`;
+        if (noResults) noResults.hidden = matchingCards.length > 0;
+        pager.replaceChildren();
+        if (pageCount <= 1) return;
+
+        const addButton = (label, target, disabled = false, active = false) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'page-button' + (active ? ' is-active' : '');
+            button.textContent = label;
+            button.disabled = disabled;
+            if (active) button.setAttribute('aria-current', 'page');
+            button.addEventListener('click', () => { page = target; render(); });
+            pager.append(button);
+        };
+        addButton('‹', page - 1, page === 1);
+        const firstPage = Math.min(page, Math.max(1, pageCount - 2));
+        const lastPage = Math.min(pageCount, firstPage + 2);
+        for (let number = firstPage; number <= lastPage; number++) {
+            addButton(String(number), number, false, number === page);
+        }
+        addButton('›', page + 1, page === pageCount);
+    }
+
+    search.addEventListener('input', () => { page = 1; render(); });
+    render();
+})();
+</script>

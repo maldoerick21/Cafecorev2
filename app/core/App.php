@@ -3,7 +3,7 @@ class App
 {
     private array $routes = [
         'GET' => [
-            '' => ['AuthController', 'login'],
+            '' => ['HomeController', 'index'],
             'login' => ['AuthController', 'login'],
             'signup' => ['AuthController', 'signup'],
             'forgot' => ['AuthController', 'forgot'],
@@ -12,9 +12,11 @@ class App
             'menu/item' => ['HomeController', 'detail'],
             'checkout' => ['CartController', 'index'],
             'history' => ['OrderController', 'history'],
+            'history/statuses' => ['OrderController', 'statuses'],
             'profile' => ['ProfileController', 'index'],
             'admin' => ['AdminController', 'dashboard'],
             'admin/history' => ['AdminController', 'history'],
+            'admin/history/archive' => ['AdminController', 'archiveOrders'],
             'admin/staff' => ['AdminController', 'staff'],
             'admin/menu' => ['AdminController', 'menu'],
             'admin/menu/create' => ['AdminController', 'edit'],
@@ -22,6 +24,8 @@ class App
             'staff' => ['StaffController', 'orders'],
             'staff/orders' => ['StaffController', 'orders'],
             'staff/orders/create' => ['StaffController', 'createOrder'],
+            'reports' => ['ReportController', 'index'],
+            'reports/export' => ['ReportController', 'export'],
         ],
         'POST' => [
             'login' => ['AuthController', 'loginPost'],
@@ -31,15 +35,19 @@ class App
             'cart/update' => ['CartController', 'update'],
             'cart/remove' => ['CartController', 'remove'],
             'checkout' => ['CartController', 'place'],
+            'history/archive' => ['OrderController', 'archiveCustomerOrders'],
             'profile' => ['ProfileController', 'update'],
             'admin/menu/save' => ['AdminController', 'save'],
             'admin/menu/toggle' => ['AdminController', 'toggle'],
             'admin/menu/delete' => ['AdminController', 'delete'],
+            'admin/menu/archive' => ['AdminController', 'archiveMenu'],
             'admin/staff/create' => ['AdminController', 'createStaff'],
             'admin/staff/delete' => ['AdminController', 'deleteStaff'],
+            'admin/staff/archive' => ['AdminController', 'archiveStaff'],
             'staff/orders/create' => ['StaffController', 'createOrderPost'],
             'staff/orders/status' => ['StaffController', 'updateStatus'],
             'staff/orders/payment' => ['StaffController', 'updatePayment'],
+            'staff/orders/update' => ['StaffController', 'updateOrder'],
         ],
     ];
     public function __construct()

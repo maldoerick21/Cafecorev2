@@ -23,7 +23,10 @@
     align-items: end;
 }
 .auth-visual h2 { font-size: 2.6rem; line-height: 1.15; }
-.brand-mark { font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: .8rem; }
+.auth-visual-inner { position: relative; z-index: 1; display: grid; justify-items: start; gap: .8rem; max-width: 44rem; }
+.brand-mark { display: inline-flex; align-items: center; gap: .65rem; width: fit-content; max-width: 100%; padding: .35rem .9rem .35rem .35rem; border: 1px solid rgba(255,255,255,.24); border-radius: 999px; background: rgba(22,20,31,.58); color: #fff; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: .8rem; }
+.brand-mark img { display: block; flex: 0 0 42px; width: 42px; height: 42px; max-width: 100%; object-fit: contain; }
+.brand-mark > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .auth-main {
     position: relative;
     z-index: 2;

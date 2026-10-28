@@ -24,7 +24,9 @@
                 pager.append(button);
             };
             addButton('‹', page - 1, page === 1);
-            for (let n = 1; n <= pageCount; n++) addButton(String(n), n, false, n === page);
+            const firstPage = Math.min(Math.max(1, page), Math.max(1, pageCount - 2));
+            const lastPage = Math.min(pageCount, firstPage + 2);
+            for (let n = firstPage; n <= lastPage; n++) addButton(String(n), n, false, n === page);
             addButton('›', page + 1, page === pageCount);
         }
         filters.forEach(button => button.addEventListener('click', () => {

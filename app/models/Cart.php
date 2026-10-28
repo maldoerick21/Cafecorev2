@@ -11,8 +11,8 @@ class Cart
     }
     public static function makeKey(int $id, string $size = 'Medium', int $sugar = 100): string
     {
-        $size = in_array($size, ['Small', 'Medium', 'Large'], true) ? $size : 'Medium';
-        $sugar = in_array($sugar, [0, 25, 50, 75, 100], true) ? $sugar : 100;
+        $size = in_array($size, ['Small', 'Medium', 'Large'], true) ? $size : 'Standard';
+        $sugar = in_array($sugar, [0, 25, 50, 75, 100], true) ? $sugar : -1;
         return $id . '|' . $size . '|' . $sugar;
     }
     public static function add(int $id, int $qty = 1, string $size = 'Medium', int $sugar = 100): void
@@ -34,16 +34,31 @@ class Cart
         foreach (self::items() as $key => $qty) {
             $parts = explode('|', (string) $key);
             $id = (int) ($parts[0] ?? $key);
-            $size = $parts[1] ?? 'Medium';
-            $sugar = isset($parts[2]) ? (int) $parts[2] : 100;
-            if (!in_array($size, ['Small', 'Medium', 'Large'], true)) $size = 'Medium';
-            if (!in_array($sugar, [0,25,50,75,100], true)) $sugar = 100;
+            $requestedSize = $parts[1] ?? 'Medium';
+            $requestedSugar = isset($parts[2]) ? (int) $parts[2] : 100;
             $item = MenuItem::find($id);
             if (!$item) continue;
-            $extra = ['Small' => 0, 'Medium' => 15, 'Large' => 25][$size];
+            $customization = MenuItem::customizationOptions((string) $item['category']);
+            $size = !$customization['size']
+                ? 'Standard'
+                : (in_array($requestedSize, ['Small', 'Medium', 'Large'], true) ? $requestedSize : 'Medium');
+            $sugar = !$customization['sugar']
+                ? null
+                : (in_array($requestedSugar, [0, 25, 50, 75, 100], true) ? $requestedSugar : 100);
+            $extra = $customization['size'] && $size !== 'Standard' ? ['Small' => 0, 'Medium' => 15, 'Large' => 25][$size] : 0;
             $price = (float) $item['price'] + $extra;
             $line = $price * $qty; $subtotal += $line;
-            $lines[] = ['key' => (string)$key, 'item' => $item, 'qty' => $qty, 'size' => $size, 'sugar' => $sugar, 'price' => $price, 'line' => $line];
+            $lines[] = [
+                'key' => (string) $key,
+                'item' => $item,
+                'qty' => $qty,
+                'size' => $size,
+                'sugar' => $sugar,
+                'has_size' => $customization['size'],
+                'has_sugar' => $customization['sugar'],
+                'price' => $price,
+                'line' => $line,
+            ];
         }
         // Over-the-counter pickup has no service fee.
         $service = 0;

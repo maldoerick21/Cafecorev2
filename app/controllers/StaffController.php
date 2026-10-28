@@ -9,12 +9,16 @@ class StaffController extends Controller
             $status = '';
         }
         $search = trim(is_string($_GET['q'] ?? null) ? $_GET['q'] : '');
+        $todayOnly = ($_GET['today'] ?? '') === '1' && $status === 'completed';
+        $archived = ($_GET['archived'] ?? '') === '1';
         $this->view('staff/orders', [
             'title' => 'Staff orders',
-            'orders' => Order::forStaff($status, $search),
+            'orders' => Order::forStaff($status, $search, $todayOnly, $archived),
             'summary' => Order::staffSummary(),
             'statusFilter' => $status,
             'search' => $search,
+            'todayOnly' => $todayOnly,
+            'archived' => $archived,
         ], 'admin');
     }
 
@@ -80,6 +84,24 @@ class StaffController extends Controller
         redirect($this->ordersUrl());
     }
 
+    public function updateOrder(): void
+    {
+        require_staff();
+        verify_csrf();
+        $orderId = $this->postedInt('order_id');
+        if (!Order::updateStaffOrder(
+            $orderId,
+            $this->postedString('status'),
+            $this->postedString('payment_status'),
+            $this->postedString('payment_method')
+        )) {
+            flash('error', 'The order was not found or its details are invalid.');
+            redirect($this->statusReturnUrl());
+        }
+        flash('success', 'Order updated.');
+        redirect($this->statusReturnUrl());
+    }
+
     private function ordersUrl(): string
     {
         $status = $this->postedString('return_status');
@@ -87,7 +109,8 @@ class StaffController extends Controller
             $status = '';
         }
         $search = trim($this->postedString('return_search'));
-        $query = array_filter(['status' => $status, 'q' => $search], static fn (string $value): bool => $value !== '');
+        $todayOnly = $status === 'completed' && $this->postedString('return_today') === '1';
+        $query = array_filter(['status' => $status, 'today' => $todayOnly ? '1' : '', 'q' => $search], static fn (string $value): bool => $value !== '');
         return 'staff/orders' . ($query ? '?' . http_build_query($query) : '');
     }
 

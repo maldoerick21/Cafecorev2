@@ -37,11 +37,27 @@ class User
         );
         $stmt->execute([$data['name'], $data['phone'], $data['address'], $id]);
     }
-    public static function allStaff(): array
+    public static function allStaff(bool $archived = false): array
     {
-        return Database::connect()
-            ->query("SELECT id, name, email, created_at FROM users WHERE role = 'staff' ORDER BY name, id")
-            ->fetchAll();
+        $stmt = Database::connect()->prepare("SELECT id, name, email, created_at, archived_at FROM users WHERE role = 'staff' AND archived_at IS " . ($archived ? 'NOT ' : '') . "NULL ORDER BY name, id");
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+    public static function archiveStaff(array $ids, bool $restore = false): int
+    {
+        $ids = array_values(array_unique(array_filter(array_map(static function ($value): int {
+            $id = is_scalar($value) ? filter_var($value, FILTER_VALIDATE_INT) : false;
+            return $id === false ? 0 : $id;
+        }, $ids), static fn (int $id): bool => $id > 0)));
+        if (!$ids) {
+            return 0;
+        }
+        $sql = $restore
+            ? "UPDATE users SET archived_at = NULL WHERE role = 'staff' AND archived_at IS NOT NULL AND id IN (" . implode(',', array_fill(0, count($ids), '?')) . ')'
+            : "UPDATE users SET archived_at = CURRENT_TIMESTAMP WHERE role = 'staff' AND archived_at IS NULL AND id IN (" . implode(',', array_fill(0, count($ids), '?')) . ')';
+        $stmt = Database::connect()->prepare($sql);
+        $stmt->execute($ids);
+        return $stmt->rowCount();
     }
     public static function createStaff(string $name, string $email, string $password): int
     {

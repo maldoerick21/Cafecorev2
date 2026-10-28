@@ -1,0 +1,141 @@
+<?php
+/** @var array $filters */
+/** @var array $report */
+$summary = $report['summary'];
+$periodTitle = ucfirst($filters['period']);
+$averageOrderValue = $summary['total_orders'] > 0 ? $summary['order_value'] / $summary['total_orders'] : 0;
+?>
+<section class="report-workspace">
+    <div class="section-head">
+        <div>
+            <h1>Reports</h1>
+        </div>
+        <a class="btn btn-primary" href="<?= url('reports/export?' . http_build_query(['period' => $filters['period'], 'date' => $filters['anchor']])) ?>">
+            <i class="fa-solid fa-file-excel"></i> Export to Excel
+        </a>
+    </div>
+
+    <form class="report-filters" method="get" action="<?= url('reports') ?>">
+        <label>
+            <span>Sales period</span>
+            <select name="period">
+                <?php foreach (['daily' => 'Daily', 'weekly' => 'Weekly', 'monthly' => 'Monthly', 'yearly' => 'Yearly'] as $value => $label): ?>
+                    <option value="<?= e($value) ?>" <?= $filters['period'] === $value ? 'selected' : '' ?>><?= e($label) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+        <label>
+            <span><?= e($filters['period'] === 'daily' ? 'Day' : ($filters['period'] === 'weekly' ? 'Week of' : ($filters['period'] === 'monthly' ? 'Month' : 'Year'))) ?></span>
+            <input type="date" name="date" value="<?= e($filters['anchor']) ?>" required>
+        </label>
+        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-filter"></i> Apply filters</button>
+    </form>
+
+    <div class="staff-summary report-summary">
+        <article><span>Orders</span><strong><?= number_format((int) $summary['total_orders']) ?></strong></article>
+        <article><span>Sales revenue</span><strong><?= money((float) $summary['order_value']) ?></strong></article>
+        <article><span>Average order value</span><strong><?= money((float) $averageOrderValue) ?></strong></article>
+        <article><span>Payments collected</span><strong><?= money((float) $summary['collected_amount']) ?></strong></article>
+    </div>
+
+    <section class="report-panel">
+        <div class="report-panel-heading">
+            <div><h2><?= e($periodTitle) ?> sales</h2></div>
+        </div>
+        <?php if ($report['daily']): ?>
+            <div class="report-table-wrap">
+                <table class="report-table">
+                    <thead><tr><th><?= e($periodTitle === 'Weekly' ? 'Week' : ($periodTitle === 'Monthly' ? 'Month' : ($periodTitle === 'Yearly' ? 'Year' : 'Date'))) ?></th><th>Orders</th><th>Collected</th></tr></thead>
+                    <tbody data-report-list="daily-sales">
+                        <?php foreach ($report['daily'] as $day): ?>
+                            <tr>
+                                <td><?= e(match ($filters['period']) {
+                                    'weekly' => 'Week of ' . date('M j, Y', strtotime($day['date'])),
+                                    'monthly' => date('M Y', strtotime($day['date'])),
+                                    'yearly' => date('Y', strtotime($day['date'])),
+                                    default => date('M j, Y', strtotime($day['date'])),
+                                }) ?></td>
+                                <td><?= number_format((int) $day['orders']) ?></td>
+                                <td><?= money((float) $day['collected_amount']) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination" data-report-pagination="daily-sales" aria-label="Daily sales pages"></div>
+        <?php else: ?>
+            <p class="report-empty">No sales match these filters.</p>
+        <?php endif; ?>
+    </section>
+
+    <section class="report-panel">
+        <div class="report-panel-heading">
+            <div><h2>Matching orders</h2><p><?= (int) $summary['total_orders'] ?> orders for the selected filters</p></div>
+        </div>
+        <?php if ($report['orders']): ?>
+            <div class="report-table-wrap">
+                <table class="report-table report-orders-table">
+                    <thead><tr><th>Order</th><th>Date</th><th>Customer</th><th>Items</th><th>Status</th><th>Payment</th><th>Total</th></tr></thead>
+                    <tbody data-report-list="matching-orders">
+                        <?php foreach ($report['orders'] as $order): ?>
+                            <tr>
+                                <td>#<?= (int) $order['id'] ?></td>
+                                <td><?= e(date('M j, Y g:ia', strtotime($order['created_at']))) ?></td>
+                                <td><strong><?= e($order['customer']) ?></strong><span><?= e($order['email']) ?></span></td>
+                                <td><?= e($order['items_summary']) ?></td>
+                                <td><em class="status status-<?= e($order['status']) ?>"><?= e(ucfirst($order['status'])) ?></em></td>
+                                <td><strong><?= e(ucfirst(str_replace('_', ' ', $order['payment_status'] ?? 'Not recorded'))) ?></strong></td>
+                                <td><?= money((float) $order['total']) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination" data-report-pagination="matching-orders" aria-label="Matching order pages"></div>
+        <?php else: ?>
+            <p class="report-empty">No orders match these filters.</p>
+        <?php endif; ?>
+    </section>
+</section>
+<script>
+(() => {
+    document.querySelectorAll('[data-report-pagination]').forEach(pager => {
+        const listName = pager.dataset.reportPagination;
+        const body = document.querySelector(`[data-report-list="${listName}"]`);
+        if (!body) return;
+        const rows = [...body.querySelectorAll('tr')];
+        const pageSize = 10;
+        let page = 1;
+
+        const addButton = (label, target, disabled = false, active = false) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'page-button' + (active ? ' is-active' : '');
+            button.textContent = label;
+            button.disabled = disabled;
+            if (active) button.setAttribute('aria-current', 'page');
+            button.addEventListener('click', () => { page = target; render(); });
+            pager.append(button);
+        };
+
+        function render() {
+            const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+            page = Math.min(page, pageCount);
+            rows.forEach((row, index) => {
+                row.hidden = index < (page - 1) * pageSize || index >= page * pageSize;
+            });
+            pager.replaceChildren();
+            if (pageCount <= 1) return;
+            addButton('‹', page - 1, page === 1);
+            const firstPage = Math.min(Math.max(1, page), Math.max(1, pageCount - 2));
+            const lastPage = Math.min(pageCount, firstPage + 2);
+            for (let number = firstPage; number <= lastPage; number++) {
+                addButton(String(number), number, false, number === page);
+            }
+            addButton('›', page + 1, page === pageCount);
+        }
+
+        render();
+    });
+})();
+</script>

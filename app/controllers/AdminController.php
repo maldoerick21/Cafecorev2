@@ -9,24 +9,54 @@ class AdminController extends Controller
             'stats' => Order::stats(),
             'customers' => User::count(),
             'menuCount' => MenuItem::count(),
-            'recent' => Order::allRecent(),
+            'recent' => Order::allRecent(5),
         ], 'admin');
     }
     public function history(): void
     {
         require_admin();
+        $dateFilters = history_date_filter();
+        $archived = ($_GET['archived'] ?? '') === '1';
         $this->view('admin/history', [
             'title' => 'Order history',
-            'orders' => Order::allForAdmin(),
+            'orders' => Order::allForAdmin($dateFilters['date'], $dateFilters['date'], $archived),
+            'dateFilters' => $dateFilters,
+            'archived' => $archived,
         ], 'admin');
+    }
+    public function archiveOrders(): void
+    {
+        require_admin();
+        verify_csrf();
+        $ids = is_array($_POST['ids'] ?? null) ? $_POST['ids'] : [];
+        $restore = ($_POST['operation'] ?? '') === 'restore';
+        $changed = Order::archiveMany($ids, $restore);
+        flash('success', $changed . ' order' . ($changed === 1 ? '' : 's') . ($restore ? ' restored.' : ' archived.'));
+        $date = is_string($_POST['date'] ?? null) ? $_POST['date'] : '';
+        redirect('admin/history?' . http_build_query(array_filter([
+            'date' => $date,
+            'archived' => $restore ? null : '1',
+        ], static fn ($value) => $value !== null && $value !== '')));
     }
     public function staff(): void
     {
         require_admin();
+        $archived = ($_GET['archived'] ?? '') === '1';
         $this->view('admin/staff', [
             'title' => 'Staff accounts',
-            'staffMembers' => User::allStaff(),
+            'staffMembers' => User::allStaff($archived),
+            'archived' => $archived,
         ], 'admin');
+    }
+    public function archiveStaff(): void
+    {
+        require_admin();
+        verify_csrf();
+        $ids = is_array($_POST['ids'] ?? null) ? $_POST['ids'] : [];
+        $restore = ($_POST['operation'] ?? '') === 'restore';
+        $changed = User::archiveStaff($ids, $restore);
+        flash('success', $changed . ' staff account' . ($changed === 1 ? '' : 's') . ($restore ? ' restored.' : ' archived.'));
+        redirect('admin/staff' . ($restore ? '' : '?archived=1'));
     }
     public function createStaff(): void
     {
@@ -93,10 +123,22 @@ class AdminController extends Controller
     public function menu(): void
     {
         require_staff();
+        $archived = ($_GET['archived'] ?? '') === '1';
         $this->view('admin/menu', [
             'title' => 'Menu management',
-            'items' => MenuItem::all(),
+            'items' => MenuItem::all(null, false, $archived),
+            'archived' => $archived,
         ], 'admin');
+    }
+    public function archiveMenu(): void
+    {
+        require_staff();
+        verify_csrf();
+        $ids = is_array($_POST['ids'] ?? null) ? $_POST['ids'] : [];
+        $restore = ($_POST['operation'] ?? '') === 'restore';
+        $changed = MenuItem::archiveMany($ids, $restore);
+        flash('success', $changed . ' menu item' . ($changed === 1 ? '' : 's') . ($restore ? ' restored.' : ' archived.'));
+        redirect('admin/menu' . ($restore ? '' : '?archived=1'));
     }
     public function edit(): void
     {

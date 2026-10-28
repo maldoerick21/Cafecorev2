@@ -70,6 +70,14 @@ function require_auth(): array
 {
     $user = auth();
     if (!$user) {
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
+            $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+            $requestPath = preg_replace('#^' . preg_quote(BASE_URL, '#') . '#', '', $requestPath);
+            $route = trim($requestPath, '/');
+            if (in_array($route, ['menu/item', 'checkout', 'history', 'profile'], true)) {
+                $_SESSION['_after_login'] = $route . (!empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : '');
+            }
+        }
         flash('error', 'Please sign in to continue.');
         redirect('login');
     }
@@ -88,9 +96,9 @@ function require_staff(): array
 {
     $user = require_auth();
     $freshUser = User::find((int) ($user['id'] ?? 0));
-    if (!$freshUser) {
+    if (!$freshUser || !empty($freshUser['archived_at'])) {
         unset($_SESSION['user']);
-        flash('error', 'Your staff account is no longer available. Please sign in again.');
+        flash('error', 'Your account is no longer active. Please sign in again.');
         redirect('login');
     }
     $_SESSION['user'] = User::toSession($freshUser);
@@ -104,4 +112,23 @@ function require_staff(): array
 function money(float $amount): string
 {
     return '₱' . number_format($amount, 2);
+}
+
+function history_date_filter(): array
+{
+    $validDate = static function (mixed $value): ?string {
+        if (!is_string($value) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return null;
+        }
+        $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+        $errors = DateTimeImmutable::getLastErrors();
+        if (!$date || ($errors !== false && ($errors['warning_count'] > 0 || $errors['error_count'] > 0))) {
+            return null;
+        }
+        return $date->format('Y-m-d') === $value ? $value : null;
+    };
+
+    $today = Order::reportDateDefaults()['to'];
+    $date = $validDate($_GET['date'] ?? null) ?? $today;
+    return compact('date');
 }

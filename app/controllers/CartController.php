@@ -3,10 +3,11 @@ class CartController extends Controller
 {
     public function index(): void
     {
-        require_auth();
+        $user = require_auth();
         $this->view('checkout/index', [
             'title' => 'Checkout',
             'cart' => Cart::detailed(),
+            'deliveryAddress' => $user['address'] ?? '',
             'cartCount' => Cart::count(),
         ]);
     }
@@ -20,7 +21,13 @@ class CartController extends Controller
             flash('error', 'That item is not available.');
             redirect('home');
         }
-        Cart::add($id, (int) ($_POST['qty'] ?? 1), (string) ($_POST['size'] ?? 'Medium'), (int) ($_POST['sugar'] ?? 100));
+        $customization = MenuItem::customizationOptions((string) $item['category']);
+        $requestedSize = is_string($_POST['size'] ?? null) ? $_POST['size'] : '';
+        $size = !$customization['size'] ? 'Standard' : (in_array($requestedSize, ['Small', 'Medium', 'Large'], true) ? $requestedSize : 'Medium');
+        $sugarValue = $_POST['sugar'] ?? 100;
+        $requestedSugar = is_scalar($sugarValue) ? filter_var($sugarValue, FILTER_VALIDATE_INT) : false;
+        $sugar = !$customization['sugar'] ? -1 : (in_array($requestedSugar, [0, 25, 50, 75, 100], true) ? $requestedSugar : 100);
+        Cart::add($id, (int) ($_POST['qty'] ?? 1), $size, $sugar);
         flash('success', $item['name'] . ' added to your tray.');
         redirect($_POST['redirect'] ?? 'home');
     }
@@ -45,7 +52,17 @@ class CartController extends Controller
 
         $paymentMethod = (string) ($_POST['payment_method'] ?? '');
         if ($paymentMethod !== 'counter') {
-            flash('error', 'Please select Pay at the counter.');
+            flash('error', 'Cash on delivery is the only available payment method.');
+            redirect('checkout');
+        }
+        $fulfillmentType = (string) ($_POST['fulfillment_type'] ?? '');
+        if ($fulfillmentType !== 'delivery') {
+            flash('error', 'Delivery is the only available order type.');
+            redirect('checkout');
+        }
+        $deliveryAddress = trim(is_string($_POST['delivery_address'] ?? null) ? $_POST['delivery_address'] : '');
+        if ($fulfillmentType === 'delivery' && $deliveryAddress === '') {
+            flash('error', 'Enter a delivery address or choose pickup.');
             redirect('checkout');
         }
         $detail = Cart::detailed();
@@ -58,9 +75,10 @@ class CartController extends Controller
             $catalog[$line['key']] = $line;
         }
         try {
-            $orderId = Order::create($user['id'], Cart::items(), $catalog, $paymentMethod);
+            $orderId = Order::create($user['id'], Cart::items(), $catalog, $paymentMethod, $fulfillmentType, $deliveryAddress);
             Cart::clear();
-            flash('success', 'Order #' . $orderId . ' placed. Pay at the counter when you pick it up.');
+            $message = 'Order #' . $orderId . ' placed. Pay cash on delivery.';
+            flash('success', $message);
             redirect('history');
         } catch (Throwable $e) {
             flash('error', 'Could not place the order. Try again.');

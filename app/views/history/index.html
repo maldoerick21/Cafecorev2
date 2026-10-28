@@ -1,5 +1,7 @@
 <?php /** @var array $orders */ ?>
 <?php $staffLayout = $staffLayout ?? false; ?>
+<?php $completed = $completed ?? false; ?>
+<?php $dateFilters = $dateFilters ?? ['from' => null, 'to' => null]; ?>
 <section class="<?= $staffLayout ? 'staff-workspace staff-history-workspace' : '' ?>">
     <?php if ($staffLayout): ?>
         <div class="section-head">
@@ -11,43 +13,47 @@
     <?php else: ?>
         <h1>History</h1>
     <?php endif; ?>
+    <form class="history-date-filter" method="get" action="<?= url('history') ?>">
+        <label><span>Order date</span><input type="date" name="date" value="<?= e($dateFilters['date']) ?>" required></label>
+        <?php if ($completed && !$staffLayout): ?><input type="hidden" name="completed" value="1"><?php endif; ?>
+        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-filter"></i> Show orders</button>
+    </form>
+    <?php if (!$staffLayout): ?>
+        <div class="archive-toolbar customer-archive-toolbar">
+            <nav class="archive-views" aria-label="Order history views">
+                <a href="<?= url('history?date=' . rawurlencode($dateFilters['date'])) ?>" class="<?= !$completed ? 'is-active' : '' ?>">Current orders</a>
+                <a href="<?= url('history?date=' . rawurlencode($dateFilters['date']) . '&completed=1') ?>" class="<?= $completed ? 'is-active' : '' ?>">Completed</a>
+            </nav>
+        </div>
+    <?php endif; ?>
     <?php if (!$orders): ?>
         <div class="empty <?= $staffLayout ? 'staff-history-empty' : '' ?>">
             <i class="fa-solid fa-clock-rotate-left"></i>
-            <p>No orders yet.</p>
+            <p>No orders for this date.</p>
         </div>
     <?php else: ?>
-        <div class="history-list <?= $staffLayout ? 'staff-history-list' : '' ?>">
+        <div class="history-list <?= $staffLayout ? 'staff-history-list' : '' ?>" <?= $staffLayout ? 'data-pagination-list="staff-order-history"' : '' ?>>
             <?php foreach ($orders as $order): ?>
-                <article class="history-order <?= $staffLayout ? 'staff-order-card' : '' ?>">
+                <article class="history-order <?= $staffLayout ? 'staff-order-card' : '' ?>" data-order-id="<?= (int) $order['id'] ?>">
                     <header class="<?= $staffLayout ? 'staff-order-heading' : '' ?>">
-                        <div>
-                            <strong>Order #<?= (int) $order['id'] ?></strong>
-                            <span><?= e(date('M j, Y · g:ia', strtotime($order['created_at']))) ?></span>
+                        <div class="history-order-heading">
+                            <div>
+                                <strong>Order #<?= (int) $order['id'] ?></strong>
+                                <span><?= e(date('M j, Y · g:ia', strtotime($order['created_at']))) ?></span>
+                            </div>
                         </div>
                         <em class="status status-<?= e($order['status']) ?>"><?= e($order['status']) ?></em>
                     </header>
                     <?php if ($order['payment']): ?>
                         <p class="payment-status <?= $staffLayout ? 'staff-history-payment' : '' ?>">
-                            Payment: <?= e(ucfirst($order['payment']['payment_method'])) ?> ·
+                            Payment: <?= e(match ($order['payment']['payment_method']) { 'counter' => 'Cash on delivery (COD)', 'e_wallet' => 'Online payment', default => ucfirst($order['payment']['payment_method']) }) ?> ·
                             <?= e(ucfirst($order['payment']['payment_status'])) ?>
                         </p>
                     <?php endif; ?>
-                    <?php if ($staffLayout): ?>
-                        <form class="history-status-controls" method="post" action="<?= url('staff/orders/status') ?>">
-                            <?= csrf_field() ?>
-                            <input type="hidden" name="order_id" value="<?= (int) $order['id'] ?>">
-                            <input type="hidden" name="return_to" value="history">
-                            <label>
-                                <span>Order status</span>
-                                <select name="status">
-                                    <?php foreach (['preparing', 'completed', 'cancelled'] as $status): ?>
-                                        <option value="<?= e($status) ?>" <?= $order['status'] === $status ? 'selected' : '' ?>><?= e(ucfirst($status)) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </label>
-                            <button class="btn btn-primary" type="submit">Update status</button>
-                        </form>
+                    <?php if (!empty($order['fulfillment_type'])): ?>
+                        <p class="payment-status <?= $staffLayout ? 'staff-history-payment' : '' ?>">
+                            <?= e(ucfirst($order['fulfillment_type'])) ?><?= $order['fulfillment_type'] === 'delivery' && !empty($order['delivery_address']) ? ': ' . e($order['delivery_address']) : '' ?>
+                        </p>
                     <?php endif; ?>
                     <?php foreach ($order['items'] as $item): ?>
                         <div class="history-row <?= $staffLayout ? 'staff-history-row' : '' ?>">
@@ -63,5 +69,68 @@
                 </article>
             <?php endforeach; ?>
         </div>
+        <?php if ($staffLayout): ?><div class="pagination" data-pagination="staff-order-history" aria-label="Order history pages"></div><?php endif; ?>
     <?php endif; ?>
 </section>
+<?php if ($orders): ?>
+    <script>
+        (() => {
+            const orderCards = [...document.querySelectorAll('.history-order[data-order-id]')];
+            if (!orderCards.length) return;
+            const pager = document.querySelector('[data-pagination="staff-order-history"]');
+            if (pager) {
+                const pageSize = 10;
+                let page = 1;
+                const renderPages = () => {
+                    const pageCount = Math.max(1, Math.ceil(orderCards.length / pageSize));
+                    page = Math.min(page, pageCount);
+                    orderCards.forEach((card, index) => { card.hidden = index < (page - 1) * pageSize || index >= page * pageSize; });
+                    pager.replaceChildren();
+                    if (pageCount <= 1) return;
+                    const addButton = (label, target, disabled = false, active = false) => {
+                        const button = document.createElement('button');
+                        button.type = 'button';
+                        button.className = 'page-button' + (active ? ' is-active' : '');
+                        button.textContent = label;
+                        button.disabled = disabled;
+                        if (active) button.setAttribute('aria-current', 'page');
+                        button.addEventListener('click', () => { page = target; renderPages(); });
+                        pager.append(button);
+                    };
+                    addButton('‹', page - 1, page === 1);
+                    const firstPage = Math.min(Math.max(1, page), Math.max(1, pageCount - 2));
+                    const lastPage = Math.min(pageCount, firstPage + 2);
+                    for (let number = firstPage; number <= lastPage; number++) addButton(String(number), number, false, number === page);
+                    addButton('›', page + 1, page === pageCount);
+                };
+                renderPages();
+            }
+            const statusesUrl = <?= json_encode(url('history/statuses'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+            const allowedStatuses = ['preparing', 'completed', 'cancelled'];
+
+            async function refreshStatuses() {
+                try {
+                    const response = await fetch(statusesUrl, { cache: 'no-store', headers: { Accept: 'application/json' } });
+                    if (!response.ok) return;
+                    const result = await response.json();
+                    const statuses = new Map((result.orders || []).map((order) => [String(order.id), order.status]));
+                    orderCards.forEach((card) => {
+                        const nextStatus = statuses.get(card.dataset.orderId);
+                        const badge = card.querySelector('.status');
+                        if (!badge || !allowedStatuses.includes(nextStatus)) return;
+                        badge.textContent = nextStatus;
+                        badge.classList.remove(...allowedStatuses.map((status) => `status-${status}`));
+                        badge.classList.add(`status-${nextStatus}`);
+                    });
+                } catch (_) {
+                    // Keep the current history visible if a status refresh is temporarily unavailable.
+                }
+            }
+
+            window.setInterval(refreshStatuses, 10000);
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') refreshStatuses();
+            });
+        })();
+    </script>
+<?php endif; ?>

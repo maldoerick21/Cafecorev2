@@ -26,8 +26,31 @@ class Database
             ]
         );
         self::ensurePasswordResetTable();
+        self::ensureOrderFulfillmentColumns();
         self::ensurePaymentsTable();
+        self::ensureArchiveColumns();
         return self::$pdo;
+    }
+
+    private static function ensureArchiveColumns(): void
+    {
+        foreach (['orders', 'menu_items', 'users'] as $table) {
+            $columns = self::$pdo->query('SHOW COLUMNS FROM ' . $table)->fetchAll(PDO::FETCH_COLUMN);
+            if (!in_array('archived_at', $columns, true)) {
+                self::$pdo->exec('ALTER TABLE ' . $table . ' ADD COLUMN archived_at DATETIME NULL');
+            }
+        }
+    }
+
+    private static function ensureOrderFulfillmentColumns(): void
+    {
+        $columns = self::$pdo->query('SHOW COLUMNS FROM orders')->fetchAll(PDO::FETCH_COLUMN);
+        if (!in_array('fulfillment_type', $columns, true)) {
+            self::$pdo->exec("ALTER TABLE orders ADD COLUMN fulfillment_type VARCHAR(20) NOT NULL DEFAULT 'pickup'");
+        }
+        if (!in_array('delivery_address', $columns, true)) {
+            self::$pdo->exec('ALTER TABLE orders ADD COLUMN delivery_address TEXT NULL');
+        }
     }
 
     private static function ensurePasswordResetTable(): void

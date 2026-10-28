@@ -4,19 +4,25 @@
     <div class="section-head">
         <div>
             <h1>Staff orders</h1>
-            <p class="staff-intro">Create customer orders and keep service moving.</p>
         </div>
-        <a class="btn btn-primary" href="<?= url('staff/orders/create') ?>"><i class="fa-solid fa-plus"></i> New order</a>
     </div>
 
-    <div class="staff-summary">
-        <article><span>All orders</span><strong><?= (int) $summary['total'] ?></strong></article>
-        <article><span>Preparing</span><strong><?= (int) $summary['preparing'] ?></strong></article>
-        <article><span>Completed today</span><strong><?= (int) $summary['completed_today'] ?></strong></article>
-        <article><span>Payments pending</span><strong><?= (int) $summary['unpaid'] ?></strong></article>
+    <div class="archive-toolbar">
+        <nav class="archive-views" aria-label="Staff order views">
+            <a href="<?= url('staff/orders') ?>" class="<?= !$archived ? 'is-active' : '' ?>">Active orders</a>
+            <a href="<?= url('staff/orders?archived=1') ?>" class="<?= $archived ? 'is-active' : '' ?>">Archive</a>
+        </nav>
+        <?php if ($archived): ?><span class="archive-status"></span><?php endif; ?>
     </div>
 
-    <form method="get" action="<?= url('staff/orders') ?>" class="staff-order-filters">
+    <?php if (!$archived): ?><div class="staff-summary">
+        <a class="staff-summary-link <?= !$statusFilter && !$todayOnly ? 'is-active' : '' ?>" href="<?= url('staff/orders') ?>" <?= !$statusFilter && !$todayOnly ? 'aria-current="page"' : '' ?>><span>All orders</span><strong><?= (int) $summary['total'] ?></strong></a>
+        <a class="staff-summary-link <?= $statusFilter === 'preparing' && !$todayOnly ? 'is-active' : '' ?>" href="<?= url('staff/orders?status=preparing') ?>" <?= $statusFilter === 'preparing' && !$todayOnly ? 'aria-current="page"' : '' ?>><span>Preparing</span><strong><?= (int) $summary['preparing'] ?></strong></a>
+        <a class="staff-summary-link <?= $todayOnly ? 'is-active' : '' ?>" href="<?= url('staff/orders?status=completed&today=1') ?>" <?= $todayOnly ? 'aria-current="page"' : '' ?>><span>Completed today</span><strong><?= (int) $summary['completed_today'] ?></strong></a>
+        <a class="staff-summary-link <?= $statusFilter === 'cancelled' && !$todayOnly ? 'is-active' : '' ?>" href="<?= url('staff/orders?status=cancelled') ?>" <?= $statusFilter === 'cancelled' && !$todayOnly ? 'aria-current="page"' : '' ?>><span>Cancelled orders</span><strong><?= (int) $summary['cancelled'] ?></strong></a>
+    </div><?php endif; ?>
+
+    <?php if (!$archived): ?><form method="get" action="<?= url('staff/orders') ?>" class="staff-order-filters">
         <label>
             <span class="sr-only">Search orders or customers</span>
             <input type="search" name="q" value="<?= e($search) ?>" placeholder="Order number, customer, or email">
@@ -31,12 +37,9 @@
             </select>
         </label>
         <button class="btn btn-primary" type="submit"><i class="fa-solid fa-magnifying-glass"></i> Find orders</button>
-        <?php if ($search !== '' || $statusFilter !== ''): ?>
-            <a class="btn btn-cancel-edit" href="<?= url('staff/orders') ?>">Clear</a>
-        <?php endif; ?>
-    </form>
+    </form><?php endif; ?>
 
-    <div class="staff-orders-list">
+    <div class="staff-orders-list" data-staff-orders-list>
         <?php if (!$orders): ?>
             <div class="empty"><i class="fa-solid fa-receipt"></i><p>No matching orders.</p></div>
         <?php endif; ?>
@@ -53,13 +56,16 @@
                     <strong><?= e($order['customer']) ?></strong>
                     <span><?= e($order['email']) ?></span>
                 </div>
+                <p class="staff-order-fulfillment"><strong><?= e(ucfirst($order['fulfillment_type'] ?? 'pickup')) ?></strong><?php if (($order['fulfillment_type'] ?? 'pickup') === 'delivery' && !empty($order['delivery_address'])): ?> · <?= e($order['delivery_address']) ?><?php endif; ?></p>
                 <p class="staff-order-items"><?= e($order['items_summary']) ?></p>
-                <div class="staff-order-controls">
-                    <form method="post" action="<?= url('staff/orders/status') ?>">
+                <?php if (!$archived): ?><div class="staff-order-controls">
+                    <form method="post" action="<?= url('staff/orders/update') ?>">
                         <?= csrf_field() ?>
                         <input type="hidden" name="order_id" value="<?= (int) $order['id'] ?>">
                         <input type="hidden" name="return_status" value="<?= e($statusFilter) ?>">
                         <input type="hidden" name="return_search" value="<?= e($search) ?>">
+                        <input type="hidden" name="return_today" value="<?= $todayOnly ? '1' : '0' ?>">
+                        <input type="hidden" name="return_to" value="staff/orders">
                         <label>
                             <span>Order status</span>
                             <select name="status">
@@ -68,14 +74,7 @@
                                 <?php endforeach; ?>
                             </select>
                         </label>
-                        <button class="btn btn-primary" type="submit">Update</button>
-                    </form>
-                    <?php if ($order['payment_status'] !== null): ?>
-                        <form method="post" action="<?= url('staff/orders/payment') ?>">
-                            <?= csrf_field() ?>
-                            <input type="hidden" name="order_id" value="<?= (int) $order['id'] ?>">
-                            <input type="hidden" name="return_status" value="<?= e($statusFilter) ?>">
-                            <input type="hidden" name="return_search" value="<?= e($search) ?>">
+                        <?php if ($order['payment_status'] !== null): ?>
                             <label>
                                 <span>Payment status</span>
                                 <select name="payment_status">
@@ -87,19 +86,57 @@
                             <label>
                                 <span>Method</span>
                                 <select name="payment_method">
-                                    <?php foreach (['counter' => 'Counter', 'cash' => 'Cash', 'card' => 'Card', 'e_wallet' => 'E-wallet'] as $method => $label): ?>
-                                        <option value="<?= e($method) ?>" <?= $order['payment_method'] === $method ? 'selected' : '' ?>><?= e($label) ?></option>
-                                    <?php endforeach; ?>
+                                    <option value="counter" selected>Cash on delivery (COD)</option>
                                 </select>
                             </label>
-                            <button class="btn btn-cancel-edit" type="submit">Save payment</button>
-                        </form>
-                    <?php else: ?>
-                        <p class="staff-payment-missing">Payment record unavailable</p>
-                    <?php endif; ?>
-                </div>
+                        <?php else: ?>
+                            <p class="staff-payment-missing">Payment record unavailable</p>
+                        <?php endif; ?>
+                        <button class="btn btn-primary" type="submit">Update order</button>
+                    </form>
+                </div><?php else: ?><p class="archive-status">Completed · Paid</p><?php endif; ?>
             </article>
         <?php endforeach; ?>
     </div>
+    <div class="pagination" data-staff-orders-pagination aria-label="Staff order pages"></div>
     <?php if (count($orders) === 100): ?><p class="staff-result-limit">Showing the latest 100 matching orders. Use search or status filters to narrow the list.</p><?php endif; ?>
 </section>
+<script>
+(() => {
+    const list = document.querySelector('[data-staff-orders-list]');
+    const pager = document.querySelector('[data-staff-orders-pagination]');
+    if (!list || !pager) return;
+    const orders = [...list.querySelectorAll('.staff-order-card')];
+    const pageSize = 5;
+    const pageCount = Math.ceil(orders.length / pageSize);
+    let page = 1;
+
+    const addButton = (label, target, disabled = false, active = false) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'page-button' + (active ? ' is-active' : '');
+        button.textContent = label;
+        button.disabled = disabled;
+        if (active) button.setAttribute('aria-current', 'page');
+        button.addEventListener('click', () => { page = target; render(); });
+        pager.append(button);
+    };
+
+    function render() {
+        orders.forEach((order, index) => {
+            order.hidden = index < (page - 1) * pageSize || index >= page * pageSize;
+        });
+        pager.replaceChildren();
+        if (pageCount <= 1) return;
+        addButton('‹', page - 1, page === 1);
+        const firstPage = Math.min(page, Math.max(1, pageCount - 2));
+        const lastPage = Math.min(pageCount, firstPage + 2);
+        for (let number = firstPage; number <= lastPage; number++) {
+            addButton(String(number), number, false, number === page);
+        }
+        addButton('›', page + 1, page === pageCount);
+    }
+
+    render();
+})();
+</script>
