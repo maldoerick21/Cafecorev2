@@ -29,7 +29,7 @@ $archived = $archived ?? false;
             <a href="<?= url('admin/menu?archived=1') ?>" class="<?= $archived ? 'is-active' : '' ?>">Archived</a>
         </nav>
         <?php if ($items): ?>
-            <form id="bulk-archive-menu" class="bulk-archive-form" method="post" action="<?= url('admin/menu/archive') ?>" data-bulk-archive onsubmit="return confirm('<?= $archived ? 'Restore' : 'Archive' ?> the selected menu items?')">
+            <form id="bulk-archive-menu" class="bulk-archive-form" method="post" action="<?= url('admin/menu/archive') ?>" data-bulk-archive data-confirm-archive="menu items">
                 <?= csrf_field() ?>
                 <input type="hidden" name="operation" value="<?= $archived ? 'restore' : 'archive' ?>">
                 <label class="archive-select-all"><input type="checkbox" data-archive-select-all="bulk-archive-menu"> Select all items</label>
@@ -39,6 +39,12 @@ $archived = $archived ?? false;
         <?php endif; ?>
     </div>
     <div class="menu-admin-list" data-pagination-list="admin-menu">
+        <?php if (!$items): ?>
+            <div class="menu-empty-state">
+                <i class="fa-solid <?= $archived ? 'fa-box-open' : 'fa-mug-hot' ?>" aria-hidden="true"></i>
+                <p><?= $archived ? 'No archived items' : 'No menu items' ?></p>
+            </div>
+        <?php endif; ?>
         <?php foreach ($items as $item): ?>
             <article class="edit-item-row" data-menu-category="<?= e(trim((string) ($item['category'] ?? ''))) ?>">
                 <label class="archive-row-select"><input type="checkbox" data-archive-item form="bulk-archive-menu" name="ids[]" value="<?= (int) $item['id'] ?>"><span class="sr-only">Select <?= e($item['name']) ?></span></label>

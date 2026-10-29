@@ -59,12 +59,14 @@ class Mailer
         }
     }
 
+    /** @param resource $socket */
     private static function command($socket, string $command, array $expected): string
     {
         fwrite($socket, $command . "\r\n");
         return self::expect($socket, $expected);
     }
 
+    /** @param resource $socket */
     private static function expect($socket, array $expected): string
     {
         $response = '';

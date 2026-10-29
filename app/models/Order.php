@@ -3,6 +3,7 @@ class Order
 {
     public static function create(int $userId, array $cart, array $catalog, string $paymentMethod, string $fulfillmentType = 'pickup', ?string $deliveryAddress = null): int
     {
+        $paymentMethod = self::normalizePaymentMethod($paymentMethod);
         $pdo = Database::connect();
         $pdo->beginTransaction();
         try {
@@ -38,10 +39,11 @@ class Order
     public static function createForCustomer(string $email, array $requestedItems, string $paymentMethod): int
     {
         $email = trim($email);
+        $paymentMethod = self::normalizePaymentMethod($paymentMethod);
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             throw new InvalidArgumentException('Enter a valid customer email address.');
         }
-        if (!in_array($paymentMethod, ['counter', 'cash', 'card', 'e_wallet'], true)) {
+        if (!in_array($paymentMethod, ['Cash on Delivery', 'cash', 'card', 'e_wallet'], true)) {
             throw new InvalidArgumentException('Select a valid payment method.');
         }
         if (!$requestedItems) {
@@ -148,7 +150,7 @@ class Order
         }
     }
 
-    public static function forStaff(string $status = '', string $search = '', bool $todayOnly = false, bool $archived = false): array
+    public static function forStaff(string $status = '', string $search = '', bool $todayOnly = false, bool $archived = false, ?string $date = null): array
     {
         $allowedStatuses = ['preparing', 'completed', 'cancelled'];
         $sql = "SELECT o.id, o.user_id, o.total, o.status, o.fulfillment_type, o.delivery_address, o.created_at,
@@ -172,6 +174,11 @@ class Order
         }
         if ($todayOnly) {
             $conditions[] = 'o.created_at >= CURDATE() AND o.created_at < DATE_ADD(CURDATE(), INTERVAL 1 DAY)';
+        }
+        if ($archived && $date !== null) {
+            $conditions[] = 'o.created_at >= ? AND o.created_at < DATE_ADD(?, INTERVAL 1 DAY)';
+            $params[] = $date;
+            $params[] = $date;
         }
         if ($search !== '') {
             $conditions[] = '(u.name LIKE ? OR u.email LIKE ? OR CAST(o.id AS CHAR) = ?)';
@@ -214,10 +221,11 @@ class Order
 
     public static function updateStaffPayment(int $orderId, string $paymentStatus, string $paymentMethod): bool
     {
+        $paymentMethod = self::normalizePaymentMethod($paymentMethod);
         if (
             $orderId < 1
             || !in_array($paymentStatus, ['pending', 'paid', 'refunded'], true)
-            || $paymentMethod !== 'counter'
+            || $paymentMethod !== 'Cash on Delivery'
         ) {
             return false;
         }
@@ -248,11 +256,12 @@ class Order
 
     public static function updateStaffOrder(int $orderId, string $status, string $paymentStatus, string $paymentMethod): bool
     {
+        $paymentMethod = self::normalizePaymentMethod($paymentMethod);
         if (
             $orderId < 1
             || !in_array($status, ['preparing', 'completed', 'cancelled'], true)
             || !in_array($paymentStatus, ['pending', 'paid', 'refunded'], true)
-            || $paymentMethod !== 'counter'
+            || $paymentMethod !== 'Cash on Delivery'
         ) {
             return false;
         }
@@ -350,7 +359,7 @@ class Order
 
     public static function allRecent(?int $limit = null): array
     {
-        $sql = 'SELECT o.*, u.name AS customer FROM orders o JOIN users u ON u.id = o.user_id WHERE o.archived_at IS NULL ORDER BY o.created_at DESC, o.id DESC';
+        $sql = 'SELECT o.*, u.name AS customer FROM orders o JOIN users u ON u.id = o.user_id ORDER BY o.created_at DESC, o.id DESC';
         if ($limit !== null) {
             $sql .= ' LIMIT ?';
             $stmt = Database::connect()->prepare($sql);
@@ -373,7 +382,25 @@ class Order
         ];
     }
 
-    public static function allForAdmin(?string $from = null, ?string $to = null, bool $archived = false): array
+    public static function reportYearsWithSales(): array
+    {
+        $years = Database::connect()->query("SELECT DISTINCT YEAR(o.created_at) AS sales_year
+                FROM orders o
+                INNER JOIN payments p ON p.order_id = o.id
+                WHERE o.status = 'completed' AND p.payment_status = 'paid'
+                ORDER BY sales_year DESC")
+            ->fetchAll(PDO::FETCH_COLUMN);
+        return array_map('intval', $years);
+    }
+
+    private static function normalizePaymentMethod(string $paymentMethod): string
+    {
+        return in_array(strtolower(trim($paymentMethod)), ['counter', 'cash on delivery'], true)
+            ? 'Cash on Delivery'
+            : $paymentMethod;
+    }
+
+    public static function allForAdmin(?string $from = null, ?string $to = null, ?bool $archived = false): array
     {
         $sql = "SELECT o.id, o.total, o.status, o.fulfillment_type, o.delivery_address, o.created_at,
                 u.name AS customer, u.email,
@@ -386,8 +413,11 @@ class Order
                 SELECT order_id, GROUP_CONCAT(CONCAT(qty, ' × ', name) ORDER BY id SEPARATOR ', ') AS items_summary
                 FROM order_items GROUP BY order_id
             ) order_lines ON order_lines.order_id = o.id
-            WHERE o.archived_at IS " . ($archived ? 'NOT ' : '') . "NULL";
+            WHERE 1 = 1";
         $params = [];
+        if ($archived !== null) {
+            $sql .= ' AND o.archived_at IS ' . ($archived ? 'NOT ' : '') . 'NULL';
+        }
         if ($from !== null) {
             $sql .= ' AND o.created_at >= ?';
             $params[] = $from;
@@ -400,23 +430,6 @@ class Order
         $stmt = Database::connect()->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();
-    }
-
-    public static function archiveMany(array $ids, bool $restore = false): int
-    {
-        $ids = array_values(array_unique(array_filter(array_map(static function ($value): int {
-            $id = is_scalar($value) ? filter_var($value, FILTER_VALIDATE_INT) : false;
-            return $id === false ? 0 : $id;
-        }, $ids), static fn (int $id): bool => $id > 0)));
-        if (!$ids) {
-            return 0;
-        }
-        $sql = $restore
-            ? 'UPDATE orders SET archived_at = NULL WHERE archived_at IS NOT NULL AND id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')'
-            : "UPDATE orders SET archived_at = CURRENT_TIMESTAMP WHERE archived_at IS NULL AND status IN ('completed', 'cancelled', 'refunded') AND id IN (" . implode(',', array_fill(0, count($ids), '?')) . ')';
-        $stmt = Database::connect()->prepare($sql);
-        $stmt->execute($ids);
-        return $stmt->rowCount();
     }
 
     public static function report(array $filters): array

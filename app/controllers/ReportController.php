@@ -5,11 +5,13 @@ class ReportController extends Controller
     {
         require_staff();
         header('Cache-Control: no-store, no-cache, must-revalidate');
-        $filters = $this->filters();
+        $availableYears = Order::reportYearsWithSales();
+        $filters = $this->filters($availableYears);
         $report = Order::report($filters);
         $this->view('reports/index', [
             'title' => 'Reports',
             'filters' => $filters,
+            'availableYears' => $availableYears,
             'report' => $report,
         ], 'admin');
     }
@@ -24,15 +26,20 @@ class ReportController extends Controller
         $columns = 10;
         $rows = [];
         $merges = [];
-        $rowHeights = [1 => 30];
+        $rowHeights = [1 => 32, 2 => 25, 3 => 24];
 
         $titleRow = array_fill(0, $columns, ExcelExport::styled('', 4));
         $titleRow[0] = ExcelExport::styled('CaféCore Sales Report', 4);
         $rows[] = $titleRow;
         $merges[] = 'A1:J1';
 
+        $periodRow = array_fill(0, $columns, ExcelExport::styled('', 5));
+        $periodRow[0] = ExcelExport::styled($this->periodHeading($filters), 5);
+        $rows[] = $periodRow;
+        $merges[] = 'A2:J2';
+
         $rows[] = [
-            ExcelExport::styled('Reporting period', 1),
+            ExcelExport::styled('Date range', 1),
             ExcelExport::styled($filters['from'], 6),
             ExcelExport::styled('through', 1),
             ExcelExport::styled($filters['to'], 6),
@@ -46,10 +53,10 @@ class ReportController extends Controller
         $rows[] = [];
 
         $rows[] = $this->mergedSectionRow('Sales summary', $columns);
-        $merges[] = 'A4:J4';
+        $merges[] = 'A5:J5';
         $rows[] = $this->headerRow(['Period', 'Completed orders', 'Order value', 'Payments collected']);
         $rows[] = [
-            ExcelExport::styled($this->periodLabel($filters['period']), 8),
+            ExcelExport::styled($this->selectedPeriodLabel($filters), 8),
             ExcelExport::styled((int) $summary['total_orders'], 9),
             ExcelExport::styled((float) $summary['order_value'], 3),
             ExcelExport::styled((float) $summary['collected_amount'], 3),
@@ -91,6 +98,12 @@ class ReportController extends Controller
             'Payment method', 'Payment status', 'Payment amount', 'Total',
         ])];
         foreach ($report['orders'] as $order) {
+            $paymentMethod = (string) ($order['payment_method'] ?? '');
+            $paymentMethodLabel = match ($paymentMethod) {
+                'counter', 'Cash on Delivery' => 'Cash on delivery',
+                '' => 'Not recorded',
+                default => ucfirst(str_replace('_', ' ', $paymentMethod)),
+            };
             $orders[] = [
                 ExcelExport::styled((int) $order['id'], 7),
                 ExcelExport::styled(date('Y-m-d H:i:s', strtotime((string) $order['created_at'])), 6),
@@ -98,7 +111,7 @@ class ReportController extends Controller
                 ExcelExport::styled((string) $order['email'], 6),
                 ExcelExport::styled(ucfirst((string) $order['status']), 6),
                 ExcelExport::styled((string) $order['items_summary'], 10),
-                ExcelExport::styled(ucfirst(str_replace('_', ' ', (string) ($order['payment_method'] ?? 'Not recorded'))), 6),
+                ExcelExport::styled($paymentMethodLabel, 6),
                 ExcelExport::styled(ucfirst((string) ($order['payment_status'] ?? 'Not recorded')), 6),
                 $order['payment_amount'] === null ? ExcelExport::styled('', 6) : ExcelExport::styled((float) $order['payment_amount'], 2),
                 ExcelExport::styled((float) $order['total'], 2),
@@ -109,7 +122,7 @@ class ReportController extends Controller
             array_fill(0, 5, ExcelExport::styled('', 4)),
             [
                 ExcelExport::styled('Reporting period', 1),
-                ExcelExport::styled($this->periodLabel($filters['period']), 6),
+                ExcelExport::styled($this->selectedPeriodLabel($filters), 6),
                 ExcelExport::styled('Date range', 1),
                 ExcelExport::styled($filters['from'] . ' through ' . $filters['to'], 6),
                 ExcelExport::styled('', 6),
@@ -155,7 +168,7 @@ class ReportController extends Controller
             array_fill(0, 5, ExcelExport::styled('', 4)),
             [
                 ExcelExport::styled('Reporting period', 1),
-                ExcelExport::styled($this->periodLabel($filters['period']), 6),
+                ExcelExport::styled($this->selectedPeriodLabel($filters), 6),
                 ExcelExport::styled('Date range', 1),
                 ExcelExport::styled($filters['from'] . ' through ' . $filters['to'], 6),
                 ExcelExport::styled('', 6),
@@ -206,6 +219,7 @@ class ReportController extends Controller
             ],
             'Menu Report' => [
                 'rows' => $menuReportRows,
+                'mergeCells' => ['A1:E1'],
                 'autoFilter' => true,
                 'filterRange' => 'A3:E' . $menuReportLastRow,
                 'freezeRows' => 3,
@@ -296,8 +310,9 @@ class ReportController extends Controller
         return array_values($buckets);
     }
 
-    private function filters(): array
+    private function filters(?array $availableYears = null): array
     {
+        $availableYears ??= Order::reportYearsWithSales();
         $today = Order::reportDateDefaults()['to'];
         $period = is_string($_GET['period'] ?? null) ? $_GET['period'] : 'monthly';
         if (!in_array($period, ['daily', 'weekly', 'monthly', 'yearly'], true)) {
@@ -305,6 +320,29 @@ class ReportController extends Controller
         }
         $anchor = $this->validDate($_GET['date'] ?? null, $today);
         $date = new DateTimeImmutable($anchor);
+
+        $fallbackYear = (int) $date->format('Y');
+        $selectedYear = $availableYears[0] ?? $fallbackYear;
+        $requestedYear = filter_var(
+            $_GET[$period === 'monthly' ? 'month_year' : 'year'] ?? $date->format('Y'),
+            FILTER_VALIDATE_INT
+        );
+        if ($requestedYear !== false && in_array((int) $requestedYear, $availableYears, true)) {
+            $selectedYear = (int) $requestedYear;
+        }
+        $month = (int) $date->format('n');
+        if ($period === 'monthly') {
+            $requestedMonth = filter_var($_GET['month'] ?? $month, FILTER_VALIDATE_INT);
+            if ($requestedMonth !== false && $requestedMonth >= 1 && $requestedMonth <= 12) {
+                $month = (int) $requestedMonth;
+            }
+            $date = new DateTimeImmutable(sprintf('%04d-%02d-01', $selectedYear, $month));
+            $anchor = $date->format('Y-m-d');
+        } elseif ($period === 'yearly') {
+            $date = new DateTimeImmutable(sprintf('%04d-01-01', $selectedYear));
+            $anchor = $date->format('Y-m-d');
+        }
+
         switch ($period) {
             case 'daily':
                 $from = $to = $date->format('Y-m-d');
@@ -322,7 +360,7 @@ class ReportController extends Controller
                 $to = $date->modify('last day of this month')->format('Y-m-d');
         }
 
-        return compact('period', 'anchor', 'from', 'to');
+        return compact('period', 'anchor', 'from', 'to', 'month', 'selectedYear');
     }
 
     private function validDate(mixed $value, string $fallback): string
@@ -341,5 +379,34 @@ class ReportController extends Controller
     private function periodLabel(string $period): string
     {
         return ucfirst($period);
+    }
+
+    private function periodHeading(array $filters): string
+    {
+        $periodName = $this->periodLabel((string) $filters['period']);
+        $from = new DateTimeImmutable((string) $filters['from']);
+        $to = new DateTimeImmutable((string) $filters['to']);
+        $selection = match ($filters['period']) {
+            'daily' => 'Day: ' . $from->format('F j, Y'),
+            'weekly' => 'Week of: ' . $from->format('F j, Y'),
+            'monthly' => 'Month: ' . $from->format('F') . '  |  Year: ' . $from->format('Y'),
+            'yearly' => 'Year: ' . $from->format('Y'),
+            default => $from->format('M j, Y') . ' through ' . $to->format('M j, Y'),
+        };
+
+        return 'Sales period: ' . $periodName . '  |  ' . $selection;
+    }
+
+    private function selectedPeriodLabel(array $filters): string
+    {
+        $from = new DateTimeImmutable((string) $filters['from']);
+
+        return match ($filters['period']) {
+            'daily' => $from->format('M j, Y'),
+            'weekly' => 'Week of ' . $from->format('M j, Y'),
+            'monthly' => $from->format('F Y'),
+            'yearly' => $from->format('Y'),
+            default => $this->periodLabel((string) $filters['period']),
+        };
     }
 }

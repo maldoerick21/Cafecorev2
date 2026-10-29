@@ -1,5 +1,14 @@
 (() => {
     document.querySelectorAll('form[data-bulk-archive]').forEach((form) => {
+        const confirmationSubject = form.dataset.confirmArchive;
+        if (confirmationSubject) {
+            const operation = form.querySelector('input[name="operation"]')?.value;
+            const verb = operation === 'restore' ? 'Restore' : 'Archive';
+            form.addEventListener('submit', (event) => {
+                if (!window.confirm(`${verb} the selected ${confirmationSubject}?`)) event.preventDefault();
+            });
+        }
+
         const formId = form.id;
         const items = [...document.querySelectorAll(`input[data-archive-item][form="${formId}"]`)];
         const selectAll = document.querySelector(`[data-archive-select-all="${formId}"]`);

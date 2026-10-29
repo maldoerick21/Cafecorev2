@@ -16,7 +16,6 @@ class App
             'profile' => ['ProfileController', 'index'],
             'admin' => ['AdminController', 'dashboard'],
             'admin/history' => ['AdminController', 'history'],
-            'admin/history/archive' => ['AdminController', 'archiveOrders'],
             'admin/staff' => ['AdminController', 'staff'],
             'admin/menu' => ['AdminController', 'menu'],
             'admin/menu/create' => ['AdminController', 'edit'],

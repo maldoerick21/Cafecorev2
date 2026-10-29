@@ -78,9 +78,10 @@ class Database
             CONSTRAINT fk_payments_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
         self::$pdo->exec("INSERT INTO payments (order_id, amount, payment_method, payment_status)
-            SELECT o.id, o.total, 'counter', 'pending'
+            SELECT o.id, o.total, 'Cash on Delivery', 'pending'
             FROM orders o
             LEFT JOIN payments p ON p.order_id = o.id
             WHERE p.payment_id IS NULL");
+        self::$pdo->exec("UPDATE payments SET payment_method = 'Cash on Delivery' WHERE LOWER(payment_method) = 'counter'");
     }
 }

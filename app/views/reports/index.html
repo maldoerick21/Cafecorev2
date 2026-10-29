@@ -1,9 +1,11 @@
 <?php
 /** @var array $filters */
 /** @var array $report */
+/** @var array $availableYears */
 $summary = $report['summary'];
 $periodTitle = ucfirst($filters['period']);
 $averageOrderValue = $summary['total_orders'] > 0 ? $summary['order_value'] / $summary['total_orders'] : 0;
+$months = [1 => 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 ?>
 <section class="report-workspace">
     <div class="section-head">
@@ -18,15 +20,47 @@ $averageOrderValue = $summary['total_orders'] > 0 ? $summary['order_value'] / $s
     <form class="report-filters" method="get" action="<?= url('reports') ?>">
         <label>
             <span>Sales period</span>
-            <select name="period">
+            <select name="period" data-report-period>
                 <?php foreach (['daily' => 'Daily', 'weekly' => 'Weekly', 'monthly' => 'Monthly', 'yearly' => 'Yearly'] as $value => $label): ?>
                     <option value="<?= e($value) ?>" <?= $filters['period'] === $value ? 'selected' : '' ?>><?= e($label) ?></option>
                 <?php endforeach; ?>
             </select>
         </label>
-        <label>
-            <span><?= e($filters['period'] === 'daily' ? 'Day' : ($filters['period'] === 'weekly' ? 'Week of' : ($filters['period'] === 'monthly' ? 'Month' : 'Year'))) ?></span>
-            <input type="date" name="date" value="<?= e($filters['anchor']) ?>" required>
+        <label data-report-filter="date" <?= in_array($filters['period'], ['daily', 'weekly'], true) ? '' : 'hidden' ?>>
+            <span><?= $filters['period'] === 'weekly' ? 'Week of' : 'Day' ?></span>
+            <input type="date" name="date" value="<?= e($filters['anchor']) ?>" <?= in_array($filters['period'], ['daily', 'weekly'], true) ? '' : 'disabled' ?>>
+        </label>
+        <label data-report-filter="monthly" <?= $filters['period'] === 'monthly' ? '' : 'hidden' ?>>
+            <span>Month</span>
+            <select name="month" <?= $filters['period'] === 'monthly' ? '' : 'disabled' ?>>
+                <?php foreach ($months as $monthNumber => $monthName): ?>
+                    <option value="<?= $monthNumber ?>" <?= (int) $filters['month'] === $monthNumber ? 'selected' : '' ?>><?= e($monthName) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+        <label data-report-filter="monthly" <?= $filters['period'] === 'monthly' ? '' : 'hidden' ?>>
+            <span>Year</span>
+            <select name="month_year" <?= $filters['period'] === 'monthly' ? '' : 'disabled' ?>>
+                <?php if ($availableYears): ?>
+                    <?php foreach ($availableYears as $year): ?>
+                        <option value="<?= (int) $year ?>" <?= (int) $filters['selectedYear'] === (int) $year ? 'selected' : '' ?>><?= (int) $year ?></option>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <option value="">No years with sales</option>
+                <?php endif; ?>
+            </select>
+        </label>
+        <label data-report-filter="yearly" <?= $filters['period'] === 'yearly' ? '' : 'hidden' ?>>
+            <span>Year</span>
+            <select name="year" <?= $filters['period'] === 'yearly' ? '' : 'disabled' ?>>
+                <?php if ($availableYears): ?>
+                    <?php foreach ($availableYears as $year): ?>
+                        <option value="<?= (int) $year ?>" <?= (int) $filters['selectedYear'] === (int) $year ? 'selected' : '' ?>><?= (int) $year ?></option>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <option value="">No years with sales</option>
+                <?php endif; ?>
+            </select>
         </label>
         <button class="btn btn-primary" type="submit"><i class="fa-solid fa-filter"></i> Apply filters</button>
     </form>
@@ -97,6 +131,28 @@ $averageOrderValue = $summary['total_orders'] > 0 ? $summary['order_value'] / $s
         <?php endif; ?>
     </section>
 </section>
+<script>
+(() => {
+    const periodSelect = document.querySelector('[data-report-period]');
+    const groups = document.querySelectorAll('[data-report-filter]');
+    if (!periodSelect || !groups.length) return;
+
+    const updateFilters = () => {
+        const period = periodSelect.value;
+        groups.forEach((group) => {
+            const matches = group.dataset.reportFilter === period
+                || (group.dataset.reportFilter === 'date' && ['daily', 'weekly'].includes(period));
+            group.hidden = !matches;
+            group.querySelectorAll('input, select').forEach((control) => {
+                control.disabled = !matches;
+            });
+        });
+    };
+
+    periodSelect.addEventListener('change', updateFilters);
+    updateFilters();
+})();
+</script>
 <script>
 (() => {
     document.querySelectorAll('[data-report-pagination]').forEach(pager => {

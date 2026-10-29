@@ -51,7 +51,7 @@ class CartController extends Controller
         verify_csrf();
 
         $paymentMethod = (string) ($_POST['payment_method'] ?? '');
-        if ($paymentMethod !== 'counter') {
+        if ($paymentMethod !== 'Cash on Delivery') {
             flash('error', 'Cash on delivery is the only available payment method.');
             redirect('checkout');
         }

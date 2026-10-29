@@ -11,14 +11,24 @@ class StaffController extends Controller
         $search = trim(is_string($_GET['q'] ?? null) ? $_GET['q'] : '');
         $todayOnly = ($_GET['today'] ?? '') === '1' && $status === 'completed';
         $archived = ($_GET['archived'] ?? '') === '1';
+        $dateFilter = '';
+        $dateValue = $_GET['date'] ?? null;
+        if ($archived && is_string($dateValue) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateValue)) {
+            $parsedDate = DateTimeImmutable::createFromFormat('!Y-m-d', $dateValue);
+            $dateErrors = DateTimeImmutable::getLastErrors();
+            if ($parsedDate && ($dateErrors === false || ($dateErrors['warning_count'] === 0 && $dateErrors['error_count'] === 0)) && $parsedDate->format('Y-m-d') === $dateValue) {
+                $dateFilter = $dateValue;
+            }
+        }
         $this->view('staff/orders', [
             'title' => 'Staff orders',
-            'orders' => Order::forStaff($status, $search, $todayOnly, $archived),
+            'orders' => Order::forStaff($status, $search, $todayOnly, $archived, $dateFilter !== '' ? $dateFilter : null),
             'summary' => Order::staffSummary(),
             'statusFilter' => $status,
             'search' => $search,
             'todayOnly' => $todayOnly,
             'archived' => $archived,
+            'dateFilter' => $dateFilter,
         ], 'admin');
     }
 

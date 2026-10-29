@@ -46,7 +46,7 @@
                     </header>
                     <?php if ($order['payment']): ?>
                         <p class="payment-status <?= $staffLayout ? 'staff-history-payment' : '' ?>">
-                            Payment: <?= e(match ($order['payment']['payment_method']) { 'counter' => 'Cash on delivery (COD)', 'e_wallet' => 'Online payment', default => ucfirst($order['payment']['payment_method']) }) ?> ·
+                            Payment: <?= e(match ($order['payment']['payment_method']) { 'counter', 'Cash on Delivery' => 'Cash on delivery (COD)', 'e_wallet' => 'Online payment', default => ucfirst($order['payment']['payment_method']) }) ?> ·
                             <?= e(ucfirst($order['payment']['payment_status'])) ?>
                         </p>
                     <?php endif; ?>

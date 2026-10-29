@@ -1,6 +1,6 @@
-<?php 
+<?php
 /** @var array $orders */
-$dateFilters = $dateFilters ?? ['from' => null, 'to' => null]; 
+$dateFilters = $dateFilters ?? ['date' => date('Y-m-d')];
 ?>
 <section class="staff-workspace">
     <div class="section-head">
@@ -10,44 +10,18 @@ $dateFilters = $dateFilters ?? ['from' => null, 'to' => null];
     </div>
     <form class="admin-history-date-filter" method="get" action="<?= url('admin/history') ?>">
         <label><span>Order date</span><input type="date" name="date" value="<?= e($dateFilters['date']) ?>" required></label>
-        <?php if ($archived): ?><input type="hidden" name="archived" value="1"><?php endif; ?>
         <button class="btn btn-primary" type="submit"><i class="fa-solid fa-filter"></i> Show orders</button>
     </form>
-    <div class="archive-toolbar admin-order-archive-toolbar">
-        <nav class="archive-views" aria-label="Order archive views">
-            <a href="<?= url('admin/history?date=' . rawurlencode($dateFilters['date'])) ?>" class="<?= !$archived ? 'is-active' : '' ?>">Current orders</a>
-            <a href="<?= url('admin/history?date=' . rawurlencode($dateFilters['date']) . '&archived=1') ?>" class="<?= $archived ? 'is-active' : '' ?>">Archived</a>
-        </nav>
-        <?php if ($orders): ?>
-            <form id="bulk-archive-orders" class="bulk-archive-form" method="post" action="<?= url('admin/history/archive') ?>" data-bulk-archive onsubmit="return confirm('<?= $archived ? 'Restore' : 'Archive' ?> the selected orders?')">
-                <?= csrf_field() ?>
-                <input type="hidden" name="operation" value="<?= $archived ? 'restore' : 'archive' ?>">
-                <input type="hidden" name="date" value="<?= e($dateFilters['date']) ?>">
-                <label class="archive-select-all"><input type="checkbox" data-archive-select-all="bulk-archive-orders"> Select all eligible orders</label>
-                <?php if ($archived): ?>
-                    <button class="btn btn-primary" type="submit" disabled><i class="fa-solid fa-box-open"></i> Restore selected</button>
-                <?php else: ?>
-                    <button class="btn btn-primary" type="submit" disabled><i class="fa-solid fa-box-archive"></i> Archive selected</button>
-                <?php endif; ?>
-                <span data-archive-selection-count>0 selected</span>
-            </form>
-        <?php endif; ?>
-    </div>
     <?php if (!$orders): ?>
-        <div class="empty"><i class="fa-solid fa-clock-rotate-left"></i><p>No orders for this date.</p></div>
+        <div class="empty admin-history-empty"><i class="fa-solid fa-clock-rotate-left"></i><p>No orders for this date.</p></div>
     <?php else: ?>
         <div class="admin-history-list" data-pagination-list="admin-order-history">
             <?php foreach ($orders as $order): ?>
                 <article class="admin-history-card">
                     <header class="admin-history-card-head">
-                        <div class="admin-history-heading">
-                            <?php if ($archived || in_array($order['status'], ['completed', 'cancelled', 'refunded'], true)): ?>
-                                <label class="archive-row-select"><input type="checkbox" data-archive-item form="bulk-archive-orders" name="ids[]" value="<?= (int) $order['id'] ?>"><span class="sr-only">Select order <?= (int) $order['id'] ?></span></label>
-                            <?php endif; ?>
-                            <div class="admin-history-order">
-                                <strong>Order #<?= (int) $order['id'] ?></strong>
-                                <span><?= e(date('M j, Y · g:ia', strtotime($order['created_at']))) ?></span>
-                            </div>
+                        <div class="admin-history-order">
+                            <strong>Order #<?= (int) $order['id'] ?></strong>
+                            <span><?= e(date('M j, Y · g:ia', strtotime($order['created_at']))) ?></span>
                         </div>
                         <em class="status status-<?= e($order['status']) ?>"><?= e($order['status']) ?></em>
                     </header>
@@ -61,7 +35,7 @@ $dateFilters = $dateFilters ?? ['from' => null, 'to' => null];
                         <div class="admin-history-payment">
                             <span class="admin-history-label">Payment</span>
                             <?php if ($order['payment_status'] !== null): ?>
-                                <strong><?= e($order['payment_method'] === 'counter' ? 'Cash on delivery (COD)' : ucfirst(str_replace('_', ' ', $order['payment_method']))) ?></strong>
+                                <strong><?= e(in_array($order['payment_method'], ['counter', 'Cash on Delivery'], true) ? 'Cash on delivery (COD)' : ucfirst(str_replace('_', ' ', $order['payment_method']))) ?></strong>
                                 <span><?= e(ucfirst($order['payment_status'])) ?></span>
                             <?php else: ?>
                                 <span>Not recorded</span>
@@ -76,7 +50,6 @@ $dateFilters = $dateFilters ?? ['from' => null, 'to' => null];
         <?php if (count($orders) === 500): ?><p class="staff-result-limit">Showing the latest 500 orders.</p><?php endif; ?>
     <?php endif; ?>
 </section>
-<script src="<?= asset('js/bulk-archive.js') ?>?v=1"></script>
 <script>
 (() => {
     const list = document.querySelector('[data-pagination-list="admin-order-history"]');

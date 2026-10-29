@@ -16,27 +16,11 @@ class AdminController extends Controller
     {
         require_admin();
         $dateFilters = history_date_filter();
-        $archived = ($_GET['archived'] ?? '') === '1';
         $this->view('admin/history', [
             'title' => 'Order history',
-            'orders' => Order::allForAdmin($dateFilters['date'], $dateFilters['date'], $archived),
+            'orders' => Order::allForAdmin($dateFilters['date'], $dateFilters['date'], null),
             'dateFilters' => $dateFilters,
-            'archived' => $archived,
         ], 'admin');
-    }
-    public function archiveOrders(): void
-    {
-        require_admin();
-        verify_csrf();
-        $ids = is_array($_POST['ids'] ?? null) ? $_POST['ids'] : [];
-        $restore = ($_POST['operation'] ?? '') === 'restore';
-        $changed = Order::archiveMany($ids, $restore);
-        flash('success', $changed . ' order' . ($changed === 1 ? '' : 's') . ($restore ? ' restored.' : ' archived.'));
-        $date = is_string($_POST['date'] ?? null) ? $_POST['date'] : '';
-        redirect('admin/history?' . http_build_query(array_filter([
-            'date' => $date,
-            'archived' => $restore ? null : '1',
-        ], static fn ($value) => $value !== null && $value !== '')));
     }
     public function staff(): void
     {

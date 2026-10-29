@@ -66,6 +66,13 @@ CREATE TABLE IF NOT EXISTS payments (
   CONSTRAINT fk_payments_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Keep existing payment rows and standardize the old counter label.
+UPDATE payments
+SET payment_method = 'Cash on Delivery'
+WHERE LOWER(payment_method) = 'counter';
+
+ALTER TABLE payments AUTO_INCREMENT = 1;
+
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   user_id INT UNSIGNED NOT NULL,

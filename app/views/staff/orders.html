@@ -3,17 +3,24 @@
 <section class="staff-workspace">
     <div class="section-head">
         <div>
-            <h1>Staff orders</h1>
+            <h1>Orders</h1>
         </div>
     </div>
 
     <div class="archive-toolbar">
         <nav class="archive-views" aria-label="Staff order views">
             <a href="<?= url('staff/orders') ?>" class="<?= !$archived ? 'is-active' : '' ?>">Active orders</a>
-            <a href="<?= url('staff/orders?archived=1') ?>" class="<?= $archived ? 'is-active' : '' ?>">Archive</a>
+            <a href="<?= url('staff/orders?archived=1') ?>" class="<?= $archived ? 'is-active' : '' ?>">Completed</a>
         </nav>
         <?php if ($archived): ?><span class="archive-status"></span><?php endif; ?>
     </div>
+
+    <?php if ($archived): ?><form method="get" action="<?= url('staff/orders') ?>" class="staff-archive-date-filter">
+        <input type="hidden" name="archived" value="1">
+        <label><span>Order date</span><input type="date" name="date" value="<?= e($dateFilter ?? '') ?>"></label>
+        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-filter"></i> Show orders</button>
+        <?php if (!empty($dateFilter)): ?><a class="btn clear-date" href="<?= url('staff/orders?archived=1') ?>">Clear date</a><?php endif; ?>
+    </form><?php endif; ?>
 
     <?php if (!$archived): ?><div class="staff-summary">
         <a class="staff-summary-link <?= !$statusFilter && !$todayOnly ? 'is-active' : '' ?>" href="<?= url('staff/orders') ?>" <?= !$statusFilter && !$todayOnly ? 'aria-current="page"' : '' ?>><span>All orders</span><strong><?= (int) $summary['total'] ?></strong></a>
@@ -86,7 +93,7 @@
                             <label>
                                 <span>Method</span>
                                 <select name="payment_method">
-                                    <option value="counter" selected>Cash on delivery (COD)</option>
+                                    <option value="Cash on Delivery" selected>Cash on delivery (COD)</option>
                                 </select>
                             </label>
                         <?php else: ?>
@@ -99,7 +106,7 @@
         <?php endforeach; ?>
     </div>
     <div class="pagination" data-staff-orders-pagination aria-label="Staff order pages"></div>
-    <?php if (count($orders) === 100): ?><p class="staff-result-limit">Showing the latest 100 matching orders. Use search or status filters to narrow the list.</p><?php endif; ?>
+    <?php if (count($orders) === 100): ?><p class="staff-result-limit">Showing the latest 100 matching orders. Use <?= $archived ? 'the date filter' : 'search or status filters' ?> to narrow the list.</p><?php endif; ?>
 </section>
 <script>
 (() => {

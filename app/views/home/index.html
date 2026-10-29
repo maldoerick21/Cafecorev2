@@ -5,9 +5,13 @@
 ?>
 <section class="hero">
     <div class="hero-copy">
-        <p class="eyebrow">Today’s pour</p>
+        <p class="eyebrow"><i class="fa-solid fa-mug-hot" aria-hidden="true"></i> Today’s pour</p>
         <h1>A quieter cup, made to linger.</h1>
         <p>Four house signatures on rotation. Add them to your tray and pick up at the counter.</p>
+        <div class="hero-actions">
+            <a class="btn btn-primary" href="#menu">Explore the menu <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+            <span><i class="fa-regular fa-clock" aria-hidden="true"></i> Made fresh when you order</span>
+        </div>
     </div>
     <div class="hero-stack">
         <?php foreach (array_slice($featured, 0, 3) as $i => $item): ?>
@@ -21,7 +25,7 @@
         <?php endforeach; ?>
     </div>
 </section>
-<section class="featured">
+<section class="featured" id="menu">
     <div class="section-head">
         <div class="pills">
             <button class="pill is-active" data-filter="all">All</button>

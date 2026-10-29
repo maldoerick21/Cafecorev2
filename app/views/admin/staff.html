@@ -53,7 +53,7 @@ $archived = $archived ?? false;
                 <a href="<?= url('admin/staff?archived=1') ?>" class="<?= $archived ? 'is-active' : '' ?>">Archived</a>
             </nav>
             <?php if ($staffMembers): ?>
-                <form id="bulk-archive-staff" class="bulk-archive-form" method="post" action="<?= url('admin/staff/archive') ?>" data-bulk-archive onsubmit="return confirm('<?= $archived ? 'Restore' : 'Archive' ?> the selected staff accounts?')">
+                <form id="bulk-archive-staff" class="bulk-archive-form" method="post" action="<?= url('admin/staff/archive') ?>" data-bulk-archive data-confirm-archive="staff accounts">
                     <?= csrf_field() ?>
                     <input type="hidden" name="operation" value="<?= $archived ? 'restore' : 'archive' ?>">
                     <label class="archive-select-all"><input type="checkbox" data-archive-select-all="bulk-archive-staff"> Select all staff</label>

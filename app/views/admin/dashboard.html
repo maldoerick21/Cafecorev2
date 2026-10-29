@@ -45,7 +45,7 @@ $pieBackground = $categorySlices ? 'conic-gradient(' . implode(', ', $categorySl
                 ?>
                     <div class="earnings-column" title="<?= e($month['month']) ?>: <?= e(money((float) $month['earnings'])) ?>">
                         <span class="earnings-value"><?= money((float) $month['earnings']) ?></span>
-                        <div class="earnings-bar-track"><i style="height: <?= $height ?>%"></i></div>
+                        <div class="earnings-bar-track"><i data-bar-height="<?= e((string) $height) ?>"></i></div>
                         <span class="earnings-month"><?= e($month['month']) ?></span>
                     </div>
                 <?php endforeach; ?>
@@ -55,10 +55,10 @@ $pieBackground = $categorySlices ? 'conic-gradient(' . implode(', ', $categorySl
         <article class="panel pie-panel">
             <h2>Most sold categories</h2>
             <?php if ($categoryTotal > 0): ?>
-                <div class="pie" style="background: <?= e($pieBackground) ?>;" role="img" aria-label="Pie chart showing menu sales by category"></div>
+                <div class="pie" data-pie-background="<?= e($pieBackground) ?>" role="img" aria-label="Pie chart showing menu sales by category"></div>
                 <ul class="legend">
                     <?php foreach ($categoryLegend as $item): ?>
-                        <li><i class="dot" style="background: <?= e($item['color']) ?>"></i><span><?= e($item['name']) ?></span><strong><?= $item['sold'] ?> sold · <?= number_format($item['percent'], 1) ?>%</strong></li>
+                        <li><i class="dot" data-legend-color="<?= e($item['color']) ?>"></i><span><?= e($item['name']) ?></span><strong><?= $item['sold'] ?> sold · <?= number_format($item['percent'], 1) ?>%</strong></li>
                     <?php endforeach; ?>
                 </ul>
             <?php else: ?>
@@ -66,8 +66,11 @@ $pieBackground = $categorySlices ? 'conic-gradient(' . implode(', ', $categorySl
             <?php endif; ?>
         </article>
     </div>
-    <article class="panel">
-        <h2>Recent orders</h2>
+    <article class="panel recent-orders-panel">
+        <div class="panel-heading">
+            <h2>Recent Orders</h2>
+            <a class="recent-orders-link" href="<?= url('admin/history') ?>">View order history <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+        </div>
         <div class="table-wrap"><table class="table">
             <thead><tr><th>ID</th><th>Guest</th><th>Total</th><th>Status</th><th>When</th></tr></thead>
             <tbody>
@@ -81,6 +84,16 @@ $pieBackground = $categorySlices ? 'conic-gradient(' . implode(', ', $categorySl
 </section>
 <script>
 (() => {
+    document.querySelectorAll('[data-bar-height]').forEach(bar => {
+        const height = Number(bar.dataset.barHeight);
+        if (Number.isFinite(height)) bar.style.height = `${height}%`;
+    });
+    const pie = document.querySelector('[data-pie-background]');
+    if (pie) pie.style.background = pie.dataset.pieBackground || '';
+    document.querySelectorAll('[data-legend-color]').forEach(dot => {
+        dot.style.background = dot.dataset.legendColor || '';
+    });
+
     const earningsChart = document.querySelector('[data-earnings-chart]');
     if (earningsChart) {
         const views = JSON.parse(earningsChart.dataset.earningsChart || '{}');
